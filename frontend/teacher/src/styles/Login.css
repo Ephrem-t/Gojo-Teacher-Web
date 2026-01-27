@@ -1,0 +1,165 @@
+/* Auth.css */
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.auth-box {
+  background: #fff;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  width: 350px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-box input,
+.auth-box select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  outline: none;
+}
+
+.auth-box select {
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.auth-box input:focus,
+.auth-box select:focus {
+  border-color: #4b6cb7;
+}
+
+
+.auth-box h2 {
+  margin-bottom: 25px;
+  color: #333;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.auth-box input[type="text"],
+.auth-box input[type="password"],
+.auth-box input[type="file"] {
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  transition: 0.3s;
+}
+
+.auth-box input:focus {
+  border-color: #4b6cb7;
+  box-shadow: 0 0 10px rgba(75, 108, 183, 0.5);
+  outline: none;
+}
+
+.auth-box button {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: #4b6cb7;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.auth-box button:hover {
+  background: #182848;
+}
+
+.auth-box button:active {
+  transform: scale(0.97);
+}
+
+.auth-box p {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #555;
+}
+
+.auth-box p a {
+  color: #4b6cb7;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.auth-box img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+  border: 3px solid #4b6cb7;
+  transition: transform 0.3s;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
+
+
+
+
+
+
+/* registeration.css additions */
+
+.auth-error {
+  color: red;
+  margin-bottom: 15px;
+}
+
+.course-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.course-group input {
+  flex: 1;
+}
+
+.remove-btn, .add-btn, .submit-btn {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: #4b6cb7;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+
+.remove-btn:hover,
+.add-btn:hover,
+.submit-btn:hover {
+  background: #182848;
+}
