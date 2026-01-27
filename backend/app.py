@@ -18,6 +18,12 @@ if not os.path.exists(firebase_json):
     print("Firebase JSON missing")
     sys.exit()
 
+
+CRED_PATH = os.environ.get(
+    'GOOGLE_APPLICATION_CREDENTIALS', 
+    os.path.join(os.path.dirname(__file__), 'ethiostore-17d9f-firebase-adminsdk-5e87k-ff766d2648.json')
+)
+
 cred = credentials.Certificate(firebase_json)
 firebase_admin.initialize_app(cred, {
     "databaseURL": "https://ethiostore-17d9f-default-rtdb.firebaseio.com/",
@@ -31,6 +37,10 @@ posts_ref = db.reference("/TeacherPosts")
 @app.route('/')
 def home():
     return render_template('student_register.html')
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
 
 # New endpoint: reserve & return the next studentId
 @app.route("/generate/student_id", methods=["GET"])
