@@ -33,14 +33,17 @@ bucket = storage.bucket()
 posts_ref = db.reference("/TeacherPosts")
 
 
+@app.route('/healthz')
+def healthz():
+    return "OK", 200
+
+
 # ===================== HOME PAGE =====================
 @app.route('/')
 def home():
     return render_template('student_register.html')
 
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
+
 
 # New endpoint: reserve & return the next studentId
 @app.route("/generate/student_id", methods=["GET"])
