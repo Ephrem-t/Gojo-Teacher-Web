@@ -1,0 +1,70 @@
+
+
+echo "ethiostore-17d9f-firebase-adminsdk-5e87k-ff766d2648.json" >> .gitignore
+git add .gitignore
+
+git status
+git add .
+git commit -m "Describe your changes"
+git push origin main
+or
+git push origin main --force
+
+
+
+
+python -m venv venv
+.\venv\Scripts\Activate
+venv\Scripts\Activate.bat
+pip install flask
+python -m pip install flask-cors
+python -m pip install firebase-admin
+
+
+
+
+git log --oneline
+git reset --soft c369a7a
+git reset --mixed c369a7a
+git rm --cached ethiostore-17d9f-firebase-adminsdk-5e87k-ff766d2648.json
+
+
+
+
+
+
+
+
+
+
+├─ School_Admin
+│   ├─ admin_001
+│   │    ├─ adminId: "admin_001"     
+│   │    ├─ userId:"userId1"//from user node
+│   │    
+│
+├─ Posts  
+│   ├─ post_12345
+│   │    ├─ adminId: "admin_001"
+│   │    ├─ likeCount: "0"  
+│   │    ├─message: " "  
+│   │    ├─ postId: "post_12345"  
+│   │    ├─ postUrl: "url"  
+│   │    ├─ seenBy
+│   │    │           └─ userId: true
+│   │    └─ time: "07:48 PM, Jan 09 2026"
+
+
+│
+├─ Users
+│   ├─ <userId1>
+│   │    ├─ userId: <firebase_key>
+│   │    ├─ username: "string"
+│   │    ├─ name: "string"
+│   │    ├─ password: "string"
+│   │    ├─ role: "student" | "teacher" | 
+│   │    ├─ isActive: true | false
+│   │    └─ profileImage: "url"
+│   ├─ <userId2>
+│   └─ ...
+│

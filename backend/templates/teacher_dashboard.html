@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <h2>Teacher Dashboard</h2>
+
+    <button id="logoutBtn">Logout</button>
+
+    <h3>Assigned Courses & Students</h3>
+    <!-- Container for courses and students -->
+    <div id="coursesContainer"></div>
+
+</div>
+
+<!-- Floating Chat Box -->
+<div id="floatingChat" class="floating-chat hidden">
+    <div class="chat-header">
+        <span id="chatStudentName">Chat</span>
+        <button id="closeFloatingChat">&times;</button>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <button id="sendChatBtn">Send</button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/teacher_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

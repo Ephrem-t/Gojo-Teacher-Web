@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Registration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .field { margin-bottom: 8px; display:block; }
+        .success { background: #e6ffed; border: 1px solid #b7f5c8; padding: 12px; border-radius: 8px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <h2>Student Registration</h2>
+    <form id="studentForm" enctype="multipart/form-data">
+        <label class="field">Name:
+            <input type="text" id="name" required>
+        </label>
+
+        <!-- Username removed: will be assigned as studentId on submit -->
+
+        <label class="field">Password:
+            <input type="password" id="password" required>
+        </label>
+
+        <label class="field">Email (optional):
+            <input type="email" id="email" placeholder="student@example.com">
+        </label>
+
+        <label class="field">Phone:
+            <input type="tel" id="phone" placeholder="+251..." required>
+        </label>
+
+        <label class="field">Date of Birth:
+            <input type="date" id="dob" required>
+        </label>
+
+        <label class="field">Gender:
+            <select id="gender" required>
+                <option value="">Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+        </label>
+
+        <label class="field">Grade:
+            <select id="grade" required>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+            </select>
+        </label>
+
+        <label class="field">Section:
+            <select id="section" required>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+            </select>
+        </label>
+
+        <label class="field">Profile Image (optional):
+            <input type="file" id="profileImage" accept="image/*">
+        </label>
+
+        <button type="submit">Register</button>
+    </form>
+
+    <div id="result" style="max-width:600px;margin-top:12px;"></div>
+
+    <script src="{{ url_for('static', filename='js/student_register.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parent Registration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        input, select, button { margin: 5px 0; padding: 5px; }
+        .child-row { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Parent Registration</h2>
+
+<form id="parentForm"
+      method="POST"
+      action="/register/parent"
+      enctype="multipart/form-data">
+
+    <label>Full Name</label>
+    <input type="text" id="name" name="name" required><br>
+
+    <label>Phone Number</label>
+    <input type="tel" id="phone" name="phone" required><br>
+
+    <label>Username</label>
+    <input type="text" id="username" name="username" required><br>
+
+    <label>Password 🔒</label>
+    <input type="password" id="password" name="password" required><br>
+
+    <div id="childrenContainer">
+        <div class="child-row">
+            <label>Student ID</label>
+            <input type="text" name="studentId" class="studentId" required>
+
+            <label>Relationship</label>
+            <select name="relationship" class="relationship" required>
+                <option value="">Select</option>
+                <option value="Father">Father</option>
+                <option value="Mother">Mother</option>
+                <option value="Guardian">Guardian</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    <button type="button" id="addStudent">Add Another Student</button><br>
+
+    <label>Profile Photo (optional)</label>
+    <input type="file" id="profile" name="profile" accept="image/*"><br>
+
+    <button type="submit">Register</button>
+</form>
+
+<script src="{{ url_for('static', filename='js/parent_register.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="/static/css/school_admin.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Dashboard</h1>
+        <button onclick="goToProfile()">My Profile</button>
+        <button onclick="logoutAdmin()">Logout</button>
+    </header>
+
+    <section class="create-post">
+        <textarea id="post_text" placeholder="Write something..."></textarea>
+        <input type="file" id="post_media">
+        <button onclick="createPost()">Post</button>
+    </section>
+
+    <div id="posts_container"></div>
+</div>
+<script src="{{ url_for('static', filename='js/school_admin.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => loadPosts(false));
+</script>
+
+<script src="/static/js/school_admin.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => loadPosts());
+function goToProfile() {
+    const adminId = localStorage.getItem("adminId");
+    window.location.href = `/profile/${adminId}`;
+}
+</script>
+</body>
+</html>

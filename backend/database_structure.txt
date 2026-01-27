@@ -1,0 +1,245 @@
+Root
+│
+├─ Users
+│   ├─ <userId1>
+│   │    ├─ userId: <firebase_key>
+│   │    ├─ username: "string"
+│   │    ├─ name: "string"
+│   │    ├─ password: "string"
+│   │    ├─ role: "student" | "teacher" | "parent"
+│   │    ├─ isActive: true | false
+│   │    └─ profileImage: "url"
+│   ├─ <userId2>
+│   └─ ...
+│
+ 
+│
+├─ Teachers
+│   ├─ <teacherKey1>
+│   │    ├─ userId: <userId2>
+│   │    ├─ status: "active" | "inactive"
+│   │    └─ profileImage: "url"
+│   ├─ <teacherKey2>
+│   └─ ...
+│
+
+│
+├─ Courses
+│   ├─ course_<subject>_<grade><section>
+│   │    ├─ name: "string"
+│   │    ├─ subject: "string"
+│   │    ├─ grade: "string"
+│   │    └─ secation: "string"
+│   └─ ...
+│
+├─ TeacherAssignments
+│   ├─ <assignmentKey1>
+│   │    ├─ teacherId: <teacherKey>
+│   │    └─ courseId: <courseId>
+│   ├─ <assignmentKey2>
+│   └─ ...
+│
+├─ ClassMarks
+│   ├─ <courseId1>
+│   │    ├─ <semester1>
+│   │        ├─ <studentKey1>
+│   │        │    ├─ mark20: number
+│   │        │    ├─ mark30: number
+│   │        │    └─ mark50: number
+│   │        └─ <studentKey2>
+│   │    ├─ <semester2>
+│   │        ├─ <studentKey1>
+│   │        │    ├─ mark20: number
+│   │        │    ├─ mark30: number
+│   │        │    └─ mark50: number
+│   │        └─ <studentKey2>
+│   ├─ <courseId2>
+│   │    ├─ <semester1>
+│   │        ├─ <studentKey1>
+│   │        │    ├─ mark20: number
+│   │        │    ├─ mark30: number
+│   │        │    └─ mark50: number
+│   │        └─ <studentKey2>
+│   │    ├─ <semester2>
+│   │        ├─ <studentKey1>
+│   │        │    ├─ mark20: number
+│   │        │    ├─ mark30: number
+│   │        │    └─ mark50: number
+│   │        └─ <studentKey2>
+│   └─ ...
+│
+├─ Posts
+│   ├─ <postId1>
+│   │    ├─ adminId: <adminId>
+│   │    ├─ message: "string"
+│   │    ├─ postUrl: "url or null"
+│   │    ├─ time: timestamp
+│   │    ├─ likeCount: number
+│   │    └─ likes: { <userId>: true, ... }
+│   └─ ...
+│
+├─ School_Admins
+│   ├─ <adminId1>
+│   ├─   adminId:
+    ├─   userId"
+│   ├─ <adminId2>
+│   └─ ...
+
+
+
+
+
+
+Parents
+├── parentId_1 //parentId
+│   ├── userId              // → Users.userId (parent userId)
+│   ├── children
+│   │   ├── linkKey_1
+│   │   │   ├── studentId   // → Students studentId
+│   │   │   ├── relationship
+│   │   │
+│   │   └── linkKey_n
+│   │
+│   ├── status
+│   ├── createdAt
+│
+└── parentId_n
+
+
+
+
+Students
+├── studentId_1
+│   ├── use           // → userId of student
+│   ├── academicYear
+│   ├── grade
+│   ├── section
+│   ├── status
+│   ├── parents
+│   │   ├── parentId_1 // parentId
+│   │   │   │   │   │
+│   │   
+│
+└── studentId_n
+
+
+
+Attendance
+     ├── courseId1
+     |    ├── 2026-01-01
+     |    |    ├── studentId_1: "present"       // → studentId_1 of student from Students node
+     |    |    └── studentId_2: "absent"
+     |    └── 2026-01-02
+     |         ├── studentId_1: "late"
+     |         └── studentId_2: "present"
+
+
+
+
+ClassMarks
+ └── course_math_9A
+     └── student_123
+         ├── teacherName: "Mr. Bekele"
+         ├── semester1:
+         │    ├── assessments:
+         │       ├── a1:
+         │       │   ├── name: "Quiz 1"
+         │       │   ├── score: 7
+         │       │   ├── max: 10
+         │       ├── a2:
+         │       │   ├── name: "Test 1"
+         │       │   ├── score: 28
+         │       │   ├── max: 30
+         │       ├── a3:
+         │       │   ├── name: "Assignment"
+         │       │   ├── score: 5
+         │       │   ├── max: 5
+         │       └── a4:
+         │           ├── name: "Final Exam"
+         │           ├── score: 44
+         │           ├── max: 50
+         ├── semester2:
+         │    ├── assessments:
+         │       ├── a1:
+         │       │   ├── name: "Quiz 1"
+         │       │   ├── score: 7
+         │       │   ├── max: 10
+         │       ├── a2:
+         │       │   ├── name: "Test 1"
+         │       │   ├── score: 28
+         │       │   ├── max: 30
+         │       ├── a3:
+         │       │   ├── name: "Assignment"
+         │       │   ├── score: 5
+         │       │   ├── max: 5
+         │       └── a4:
+         │           ├── name: "Final Exam"
+         │           ├── score: 44
+         │           ├── max: 50
+
+
+
+
+
+
+
+
+
+
+         
+Chats
+└── parentUserId_receiverUserId   // sorted
+    ├── participants
+    │   ├── parentUserId: true
+    │   └── receiverUserId: true
+    │
+    ├── lastMessage
+    │   ├── text: "hi"
+    │   ├── senderId: "senderUserId"
+    │   ├── seen: false
+    │   └── timeStamp: 1623468
+    │
+    ├── unread
+    │   ├── parentUserId: 0
+    │   └── receiverUserId: 2
+    │
+    └── messages
+         └── messageId
+              ├── senderId: "USER_123"
+              ├── receiverId: "USER_456"
+              ├── type: "text" | "image"
+              ├── text: "Hello" | ""
+              ├── imageUrl: "https://firebasestorage..." | null
+              ├── replyTo: "{messageId}" | null
+              ├── seen: true | false
+              ├── edited: false
+              ├── deleted: false
+              └── timeStamp: 1700000000000
+
+
+
+
+
+
+├─ ClassMark
+│   ├─ <studentId1>
+│   │    ├─ semester1
+│   │    │    ├─ avgPoint: number
+│   │    │    ├─ percentile: number
+│   │    │    ├─ rank: number
+│   │    │    ├─ subjects
+│   │    │    │    ├─ <subjectId>
+│   │    │    │    │    ├─ mark: number
+│   │    │    │    │    ├─ grade: string
+│   │    │    │    │    └─ ...
+│   │    ├─ semester2
+│   │    │    ├─ avgPoint: number
+│   │    │    ├─ percentile: number
+│   │    │    ├─ rank: number
+│   │    │    ├─ subjects
+│   │    │    │    ├─ <subjectId>
+│   │    │    │    │    ├─ mark: number
+│   │    │    │    │    ├─ grade: string
+│   │    │    │    │    └─ ...
+│   ├─ <studentId2>
+│   └─ ...

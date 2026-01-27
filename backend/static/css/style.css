@@ -1,0 +1,398 @@
+/* ===================== GENERAL STYLES ===================== */
+
+/* General body style */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    padding: 20px;
+    margin: 0;
+}
+
+/* Headings */
+h2 {
+    text-align: center;
+    color: #333;
+}
+
+/* Form container */
+form {
+    background-color: #fff;
+    padding: 20px;
+    margin: auto;
+    width: 400px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Inputs and selects */
+input[type="text"],
+input[type="password"],
+select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+/* Buttons */
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Small responsive tweak */
+@media screen and (max-width: 500px) {
+    form {
+        width: 90%;
+    }
+}
+
+/* ===================== TEACHER REGISTER SPECIFIC ===================== */
+
+/* Course row in teacher registration */
+.course-row {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.course-row select {
+    flex: 1;
+}
+
+.remove-btn {
+    color: red;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* ===================== LOGIN PAGE ===================== */
+
+/* Center login container */
+.login-container {
+    max-width: 400px;
+    margin: 50px auto;
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+/* Login heading */
+.login-container h2 {
+    margin-bottom: 20px;
+}
+
+/* Login button style override */
+.login-container button {
+    background-color: #007BFF;
+}
+
+.login-container button:hover {
+    background-color: #0069d9;
+}
+
+/* ===================== TEACHER DASHBOARD ===================== */
+
+/* Dashboard container */
+.dashboard-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+/* Dashboard heading */
+.dashboard-container h2 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Courses table */
+.dashboard-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dashboard-container th,
+.dashboard-container td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.dashboard-container th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* Table hover effect */
+.dashboard-container tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Dashboard buttons */
+.dashboard-container button {
+    padding: 8px 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    background-color: #007BFF;
+    color: #fff;
+}
+
+.dashboard-container button:hover {
+    background-color: #0069d9;
+}
+
+/* Responsive for dashboard */
+@media screen and (max-width: 600px) {
+    .dashboard-container table,
+    .dashboard-container thead,
+    .dashboard-container tbody,
+    .dashboard-container th,
+    .dashboard-container td,
+    .dashboard-container tr {
+        display: block;
+    }
+
+    .dashboard-container th {
+        text-align: right;
+    }
+
+    .dashboard-container td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+    }
+
+    .dashboard-container td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: calc(50% - 20px);
+        font-weight: bold;
+        text-align: left;
+    }
+}
+
+
+
+
+
+
+.course-card {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.05);
+}
+
+.course-card h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.course-card ul {
+    list-style: disc inside;
+    padding-left: 0;
+}
+
+.course-card p {
+    color: #666;
+}
+/* ===================== TEACHER DASHBOARD - MARK INPUT STYLE ===================== */
+
+
+
+
+
+
+
+#logoutBtn {
+    padding: 7px 10px;       /* smaller padding */
+    font-size: 14px;         /* text size */
+    width: auto;             /* auto width */
+    float: right;            /* move to right */
+    margin-right: 10px;      /* spacing from edge */
+    
+    background: transparent; /* no fill color */
+    border: 2px solid #0069d9;  /* border color and thickness */
+    border-radius: 5px;      /* optional: rounded corners */
+    cursor: pointer;         /* pointer on hover */
+    color: #0069d9;          /* text color */
+}
+
+
+
+
+  
+
+.students-table input[type="number"] {
+    width: 60px;
+    padding: 5px 8px;
+    font-size: 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+/* Placeholder (empty value) */
+.students-table input[type="number"]::placeholder {
+    color: #bbb;
+    text-align: center;
+}
+
+/* On focus */
+.students-table input[type="number"]:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    outline: none;
+}
+
+/* Save button */
+.students-table .save-student-btn {
+    padding: 5px 10px;
+    font-size: 13px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.students-table .save-student-btn:hover {
+    background-color: #0069d9;
+}
+
+/* Total column */
+.students-table .total {
+    font-weight: bold;
+    text-align: center;
+}
+
+/* ===================== Floating chat/help-center style ===================== */
+.floating-chat {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;             /* Wider for better view */
+    height: 500px;            /* Taller to see more messages */
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+    transition: all 0.3s ease;
+    cursor: move;             /* draggable effect */
+}
+
+.floating-chat.hidden {
+    display: none;
+}
+
+.floating-chat.minimized {
+    height: 40px;
+    width: 150px;
+    cursor: default;
+}
+
+.floating-chat .chat-header {
+    background: #007bff;
+    color: #fff;
+    padding: 10px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;             /* draggable cursor */
+}
+
+.floating-chat.minimized .chat-header {
+    cursor: pointer;
+}
+
+.floating-chat .chat-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background: #f9f9f9;
+}
+
+.floating-chat .chat-input {
+    display: flex;
+    border-top: 1px solid #ccc;
+    align-items: center;
+}
+
+.floating-chat .chat-input input {
+    flex: 1;
+    padding: 12px 10px;
+    font-size: 14px;
+    border: none;
+    outline: none;
+    min-height: 50px;
+    max-height: 150px;
+    border-radius: 0 0 0 5px;
+    box-sizing: border-box;
+    resize: vertical;
+    overflow-y: auto;
+}
+
+.floating-chat .chat-input button {
+    width: 50px;               /* Square button */
+    border: none;
+    background: #007bff;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 0 0 5px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;           /* Bigger icon size */
+    transition: background 0.2s;
+}
+
+.floating-chat .chat-input button:hover {
+    background: #0069d9;
+}
+
+.chat-message {
+    margin-bottom: 8px;
+}
+
+.chat-message strong {
+    color: #007bff;
+}

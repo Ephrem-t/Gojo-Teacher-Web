@@ -1,0 +1,380 @@
+/* ---------------------------
+   GLOBAL STYLES
+---------------------------- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ---------------------------
+   CONTAINER STYLES
+---------------------------- */
+.container {
+    background: #fff;
+    padding: 40px 30px;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+/* ---------------------------
+   HEADINGS
+---------------------------- */
+.container h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 28px;
+}
+
+/* ---------------------------
+   FORMS
+---------------------------- */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+form input[type="text"],
+form input[type="password"],
+form input[type="file"],
+form textarea,
+form select {
+    padding: 12px 15px;
+    margin: 8px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+form textarea {
+    resize: none;
+}
+
+form button {
+    background: #6a11cb;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    border: none;
+    color: #fff;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+form button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* ---------------------------
+   LINKS
+---------------------------- */
+.container p {
+    margin-top: 15px;
+    color: #555;
+}
+
+.container a {
+    color: #6a11cb;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.container a:hover {
+    text-decoration: underline;
+}
+
+/* ---------------------------
+  /* ---------------------------
+   DASHBOARD CONTAINER
+---------------------------- */
+.dashboard-container {
+    width: 90%;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+/* ---------------------------
+   DASHBOARD HEADER
+---------------------------- */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.dashboard-header h2 {
+    font-size: 28px;
+    color: #fff;
+}
+
+.logout-btn {
+    background: #ff416c;
+    background: linear-gradient(to right, #ff4b2b, #ff416c);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s ease;
+}
+
+.logout-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* ---------------------------
+   CARDS
+---------------------------- */
+.card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* ---------------------------
+   CREATE POST INPUTS
+---------------------------- */
+.post-inputs {
+    display: flex;
+    flex-direction: column;
+}
+
+.post-inputs select,
+.post-inputs textarea,
+.post-inputs input[type="file"] {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.post-inputs button {
+    align-self: flex-end;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #6a11cb;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: #fff;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.post-inputs button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* ---------------------------
+   POSTS SECTION
+---------------------------- */
+.posts-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.post-box {
+    background: #f7f7f7;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.post-box h4 {
+    margin-bottom: 10px;
+    color: #6a11cb;
+}
+
+.post-box p {
+    margin-bottom: 10px;
+}
+
+.post-box img,
+.post-box video,
+.post-box audio {
+    max-width: 100%;
+    border-radius: 10px;
+}
+
+/* ---------------------------
+   RESPONSIVE
+---------------------------- */
+@media (max-width: 500px) {
+    .container {
+        padding: 30px 20px;
+        width: 90%;
+    }
+}
+
+/* General Layout */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f2f2f7;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    background-color: #4b6cb7;
+    background-image: linear-gradient(to right, #182848, #4b6cb7);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header a {
+    color: white;
+    margin-right: 15px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn-logout {
+    background-color: #ff4d4f;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+}
+
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+
+/* Create Post */
+.create-post {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.create-post textarea {
+    width: 100%;
+    height: 70px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    resize: none;
+}
+
+.create-post input[type="file"] {
+    margin-top: 10px;
+}
+
+.btn-primary {
+    background-color: #4b6cb7;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+/* Posts */
+.posts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.post-box {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+}
+
+.post-box p {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.post-media {
+    max-width: 100%;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+
+.post-actions button {
+    background: none;
+    border: none;
+    margin-right: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.profile-page .profile-info {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.profile-pic {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.post-box {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.post-profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}
+body { font-family: Arial, sans-serif; background: #f4f4f4; }
+.container { width: 90%; max-width: 800px; margin: 20px auto; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.create-post textarea { width: 100%; height: 80px; padding: 10px; border-radius: 8px; margin-bottom: 5px; }
+.create-post button { padding: 10px 15px; border-radius: 5px; background: #007bff; color: #fff; border: none; cursor: pointer; }
+.post-box { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
+.post-header { display: flex; align-items: center; margin-bottom: 10px; }
+.post-profile { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
+button { margin: 5px 5px 0 0; cursor: pointer; }
+.profile-picture { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+.profile-info { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Profile</title>
+<link rel="stylesheet" href="/static/css/school_admin.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Profile</h1>
+        <button onclick="goToDashboard()">Dashboard</button>
+        <button onclick="logoutAdmin()">Logout</button>
+    </header>
+
+    <section class="profile-info">
+        <img id="profile_pic" src="" class="profile-picture">
+        <h2 id="profile_name"></h2>
+    </section>
+
+    <div id="posts_container"></div>
+</div>
+<script src="{{ url_for('static', filename='js/school_admin.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => loadPosts(true));
+</script>
+
+<script src="/static/js/school_admin.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => loadProfile());
+function goToDashboard() {
+    window.location.href = "/dashboard";
+}
+
+// Load profile info and admin posts
+async function loadProfile() {
+    const adminId = localStorage.getItem("adminId");
+    if (!adminId) return;
+
+    const res = await fetch(`/api/admin_posts?adminId=${adminId}`);
+    const posts = await res.json();
+    renderPosts(posts);
+
+    // Get admin profile info
+    const adminDataRes = await fetch(`/api/get_admin_name?adminId=${adminId}`);
+    const adminData = await adminDataRes.json();
+    document.getElementById("profile_name").innerText = adminData.name || "Admin";
+    document.getElementById("profile_pic").src = adminData.profile || "/static/images/default.png";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>School Admin Registration</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/school_admin.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Register School Admin</h2>
+        <form id="registerForm" enctype="multipart/form-data">
+            <input type="text" name="name" placeholder="Full Name" required><br>
+            <input type="text" name="username" placeholder="Username" required><br>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <input type="file" name="profile" accept="image/*"><br>
+            <button type="submit" onclick="registerAdmin(event)">Register</button>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='js/school_admin.js') }}"></script>
+</body>
+</html>
