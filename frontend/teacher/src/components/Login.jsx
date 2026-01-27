@@ -13,6 +13,8 @@ export default function Login() {
     e.preventDefault();
     setMessage("");
 
+
+    
     const res = await loginTeacher(username, password);
     if (res.success) {
       localStorage.setItem("teacher", JSON.stringify(res.teacher));

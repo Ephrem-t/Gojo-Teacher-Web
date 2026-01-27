@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE = "http://127.0.0.1:5000/api";
+// Prefer a Vite env var `VITE_API_BASE`, fallback to production Render URL.
+const API_BASE = import.meta?.env?.VITE_API_BASE || "https://gojo-teacher-web.onrender.com/api";
 
 export const loginTeacher = async (username, password) => {
   try {
