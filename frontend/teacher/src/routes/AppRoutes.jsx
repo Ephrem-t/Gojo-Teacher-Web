@@ -17,7 +17,7 @@ import AllChat from "../components/AllChat";
 
 export default function AppRoutes() {
   return (
-    <Router>
+    <Router basename="/Gojo-Teacher-Web">
       <Routes>
         {/* Auth */}
         <Route path="/" element={<Login />} />
