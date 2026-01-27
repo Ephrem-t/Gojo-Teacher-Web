@@ -23,6 +23,8 @@ export default function TeacherAllChat() {
   const [input, setInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [presence, setPresence] = useState({}); // userId -> presence info (bool or object)
+  const [isMobile, setIsMobile] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({}); // userId -> number
 
   // incoming navigation state (support both { contact } and { user })
   const locationState = location.state || {};
@@ -78,6 +80,46 @@ export default function TeacherAllChat() {
     };
 
     fetchUsers();
+  }, []);
+
+  /* ================= UNREAD COUNTS LISTENERS ================= */
+  useEffect(() => {
+    if (!teacherUserId) return;
+
+    const users = [...students, ...parents, ...admins];
+    const unsubscribers = [];
+
+    users.forEach((u) => {
+      if (!u || !u.userId) return;
+      const chatKey = getChatId(teacherUserId, u.userId);
+      try {
+        const unreadRef = ref(db, `Chats/${chatKey}/unread/${teacherUserId}`);
+        const unsub = onValue(unreadRef, (snap) => {
+          const val = snap.val();
+          setUnreadCounts((prev) => ({ ...prev, [u.userId]: Number(val) || 0 }));
+        });
+        unsubscribers.push(unsub);
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    return () => {
+      unsubscribers.forEach((u) => u());
+    };
+  }, [students, parents, admins, teacherUserId]);
+
+  // responsive: detect mobile and auto-collapse sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = typeof window !== "undefined" && window.innerWidth < 640;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   /* ================= AUTO SELECT ================= */
@@ -347,7 +389,7 @@ export default function TeacherAllChat() {
       {/* ===== SIDEBAR ===== */}
       <div style={{ display: 'flex', alignItems: 'stretch' }}>
         <div style={{
-          width: sidebarOpen ? 280 : 0,
+          width: sidebarOpen ? (isMobile ? 220 : 280) : 0,
           background: "#fff",
           padding: sidebarOpen ? 16 : 0,
           boxShadow: sidebarOpen ? "2px 0 10px rgba(0,0,0,0.1)" : 'none',
@@ -359,13 +401,9 @@ export default function TeacherAllChat() {
             <button onClick={() => navigate(-1)} style={{ border: "none", background: "none", padding: 4, cursor: "pointer" }}>
               <FaArrowLeft size={18} />
             </button>
-            
-          </div>
-
           <div style={{ display: "flex", gap: 6, margin: "12px 0", alignItems: "center" }}>
             {["student", "parent", "admin"].map((t) => (
               <button
-                key={t}
                 onClick={() => {
                   setSelectedTab(t);
                   setSelectedChatUser(null);
@@ -385,6 +423,7 @@ export default function TeacherAllChat() {
                 {t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
             ))}
+            </div>
           </div>
 
           <div style={{ marginTop: 8, overflowY: "auto", flex: 1 }}>
@@ -398,6 +437,7 @@ export default function TeacherAllChat() {
                 style={{
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "space-between",
                   gap: 10,
                   padding: 10,
                   borderRadius: 14,
@@ -407,26 +447,37 @@ export default function TeacherAllChat() {
                   boxShadow: selectedChatUser?.userId === u.userId ? "0 2px 10px rgba(0,0,0,0.1)" : "none",
                 }}
               >
-                <div style={{ position: 'relative' }}>
-                  <img
-                    src={u.profileImage}
-                    alt={u.name}
-                    onError={(e) => (e.target.src = "/default-profile.png")}
-                    style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }}
-                  />
-                  {/* online dot */}
-                  <span style={{
-                    position: 'absolute',
-                    right: -2,
-                    bottom: -2,
-                    width: 12,
-                    height: 12,
-                    borderRadius: 12,
-                    border: '2px solid #fff',
-                    background: isUserOnline(u.userId) ? '#34D399' : '#cbd5e1'
-                  }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ position: 'relative' }}>
+                    <img
+                      src={u.profileImage}
+                      alt={u.name}
+                      onError={(e) => (e.target.src = "/default-profile.png")}
+                      style={{ width: isMobile ? 36 : 40, height: isMobile ? 36 : 40, borderRadius: "50%", objectFit: "cover" }}
+                    />
+                    {/* online dot */}
+                    <span style={{
+                      position: 'absolute',
+                      right: -2,
+                      bottom: -2,
+                      width: 12,
+                      height: 12,
+                      borderRadius: 12,
+                      border: '2px solid #fff',
+                      background: isUserOnline(u.userId) ? '#34D399' : '#cbd5e1'
+                    }} />
+                  </div>
+                  <span style={{ fontWeight: 500, marginLeft: 0 }}>{u.name}</span>
                 </div>
-                <span style={{ fontWeight: 500, marginLeft: 8 }}>{u.name}</span>
+
+                {/* unread badge */}
+                {unreadCounts[u.userId] > 0 ? (
+                  <div style={{ minWidth: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ef4444', color: '#fff', borderRadius: 14, padding: '0 6px', fontSize: 12, fontWeight: 600 }}>
+                    {unreadCounts[u.userId] > 99 ? '99+' : unreadCounts[u.userId]}
+                  </div>
+                ) : (
+                  <div style={{ width: 26 }} />
+                )}
               </div>
             ))}
           </div>
@@ -462,7 +513,7 @@ export default function TeacherAllChat() {
                 src={selectedChatUser.profileImage}
                 alt={selectedChatUser.name}
                 onError={(e) => (e.target.src = "/default-profile.png")}
-                style={{ width: 50, height: 50, borderRadius: "50%", objectFit: "cover" }}
+                style={{ width: isMobile ? 40 : 50, height: isMobile ? 40 : 50, borderRadius: "50%", objectFit: "cover" }}
               />
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontWeight: 600, fontSize: 16 }}>{selectedChatUser.name}</span>
@@ -484,7 +535,7 @@ export default function TeacherAllChat() {
                     <div
                       onClick={() => setClickedMessageId(m.id)}
                       style={{
-                        maxWidth: "70%",
+                        maxWidth: isMobile ? "85%" : "70%",
                         background: isTeacher ? "#4facfe" : "#fff",
                         color: isTeacher ? "#fff" : "#000",
                         padding: "10px 14px",
@@ -531,9 +582,9 @@ export default function TeacherAllChat() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 placeholder="Type a message..."
-                style={{ flex: 1, padding: 12, borderRadius: 25, border: "1px solid #ccc", outline: "none" }}
+                style={{ flex: 1, padding: isMobile ? 10 : 12, borderRadius: 25, border: "1px solid #ccc", outline: "none" }}
               />
-              <button onClick={sendMessage} style={{ width: 45, height: 45, borderRadius: "50%", background: "#4facfe", border: "none", color: "#fff", display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <button onClick={sendMessage} style={{ width: isMobile ? 40 : 45, height: isMobile ? 40 : 45, borderRadius: "50%", background: "#4facfe", border: "none", color: "#fff", display: "flex", justifyContent: "center", alignItems: "center" }}>
                 <FaPaperPlane />
               </button>
             </div>
