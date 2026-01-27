@@ -36,7 +36,8 @@ export default function AppRoutes() {
         <Route path="all-chat" element={<AllChat />} />
         <Route path="schedule" element={<Schedule />} />
         {/* Chat */}
-        
+        {/* Catch-all route for unknown paths (e.g., /index.html) */}
+        <Route path="*" element={<Login />} />
       </Routes>
     </Router>
   );
