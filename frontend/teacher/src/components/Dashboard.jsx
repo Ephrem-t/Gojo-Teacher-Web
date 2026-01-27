@@ -19,7 +19,7 @@ import "../styles/global.css";
 import { db } from "../firebase";
 import { ref, get } from "firebase/database";
 
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "https://gojo-teacher-web.onrender.com/api";
 const RTDB_BASE = "https://ethiostore-17d9f-default-rtdb.firebaseio.com";
 
 // === Defensive helper ===
@@ -257,7 +257,7 @@ export default function Dashboard() {
         return;
       }
       // ✅ Use full backend URL
-      const res = await axios.post(`http://127.0.0.1:5000/api/like_post`, {
+      const res = await axios.post(`https://gojo-teacher-web.onrender.com/api/like_post`, {
         postId,
         teacherId: teacherId, // or teacher.teacherId if your backend expects it
       });

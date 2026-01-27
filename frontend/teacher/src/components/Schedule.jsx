@@ -16,7 +16,7 @@ import {
 import "../styles/global.css";
 
 // --- API and RTDB endpoints ---
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "https://gojo-teacher-web.onrender.com/api";
 const RTDB_BASE = "https://ethiostore-17d9f-default-rtdb.firebaseio.com";
 
 // --- Used to sort chat ids for message threading (helper) ---

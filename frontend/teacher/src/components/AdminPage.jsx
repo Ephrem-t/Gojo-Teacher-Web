@@ -43,7 +43,7 @@ const formatDateLabel = (ts) => {
   return msgDate.toLocaleDateString();
 };
 
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "https://gojo-teacher-web.onrender.com/api";
 const RTDB_BASE = "https://ethiostore-17d9f-default-rtdb.firebaseio.com";
 
 // Admin item component

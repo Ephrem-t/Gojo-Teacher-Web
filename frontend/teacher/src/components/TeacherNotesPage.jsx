@@ -4,7 +4,7 @@ import { FaHome, FaFileAlt, FaUpload, FaCog, FaSignOutAlt, FaSearch, FaBell, FaU
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/global.css";
 
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE = "https://gojo-teacher-web.onrender.com/api";
 
 
 

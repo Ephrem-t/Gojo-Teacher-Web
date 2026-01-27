@@ -201,7 +201,7 @@ export default function Register() {
       dataToSend.append("courses", JSON.stringify(formData.courses));
       if (profile) dataToSend.append("profile", profile);
 
-      const res = await fetch("http://127.0.0.1:5000/register/teacher", {
+      const res = await fetch("https://gojo-teacher-web.onrender.com/register/teacher", {
         method: "POST",
         body: dataToSend,
       });
