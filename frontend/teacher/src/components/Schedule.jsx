@@ -400,14 +400,28 @@ function Schedule() {
       {/* --------- Main Area Row ------- */}
       <div className="main-area-row">
         {/* ---- Left Sidebar ---- */}
-        <div className="google-sidebar">
+        <div className="google-sidebar" style={{
+          position: 'fixed',
+          top: 64,
+          left: 0,
+          width: 200,
+          height: 'calc(100vh - 64px)',
+          background: '#fff',
+          boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+          zIndex: 900,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: 18,
+          overflowY: 'auto',
+        }}>
           {teacher && (
-            <div className="sidebar-profile" style={{ textAlign: "center", marginBottom: 16 }}>
-              <div className="sidebar-img-circle" style={{margin:"0 auto"}}>
-                <img src={teacher.profileImage || "/default-profile.png"} alt="profile" style={{ width: 60, height: 60, borderRadius: '50%', objectFit:'cover', border: '2.5px solid #4b6cb7'}} />
+            <div className="sidebar-profile">
+              <div className="sidebar-img-circle">
+                <img src={teacher.profileImage || "/default-profile.png"} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', border: 'none', boxShadow: 'none' }} />
               </div>
-              <h3 style={{margin:"10px 0 2px 0", fontSize:"1rem"}}>{teacher.name}</h3>
-              <p style={{ fontSize: ".98rem", color: "#888" }}>{teacher.username}</p>
+              <h3>{teacher.name}</h3>
+              <p>{teacher.username}</p>
             </div>
           )}
           <div className="sidebar-menu" style={{display:'flex', flexDirection:'column', gap:8, width:"100%"}}>

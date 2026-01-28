@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { FaChevronRight } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FaHome,
@@ -36,6 +37,8 @@ function getSafeProfileImage(profileImage) {
 }
 
 export default function Dashboard() {
+  // Sidebar toggle state for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 600);
   const navigate = useNavigate();
   const [teacher, setTeacher] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -438,13 +441,54 @@ export default function Dashboard() {
     0
   );
   const t = teacher || {};
+  // Close sidebar on overlay click (mobile)
+  const handleSidebarOverlay = () => setSidebarOpen(false);
+
+  // Hide sidebar by default on phone size, show on desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 600) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize();
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <div className="dashboard-page">
       <nav className="top-navbar">
+        {/* Hamburger for mobile */}
+        {/* Left arrow button for opening sidebar on phone size */}
+        {window.innerWidth <= 600 && !sidebarOpen && (
+          <button
+            className="sidebar-arrow-btn"
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 180,
+              transform: 'none',
+              zIndex: 1300,
+              background: '#fff',
+              border: 'none',
+              borderRadius: '0 8px 8px 0',
+              boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+              padding: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar menu"
+          >
+            <FaChevronRight size={22} />
+          </button>
+        )}
         <h2>Gojo Dashboard</h2>
-
-        
-
         <div className="nav-right">
           {/* Notifications */}
          {/* Notifications */}
@@ -584,27 +628,69 @@ export default function Dashboard() {
       </nav>
 
       <div className="google-dashboard">
-        <div className="google-sidebar">
-          <div className="sidebar-profile">
-            <div className="sidebar-img-circle">
-              <img
-                src={getSafeProfileImage(t.profileImage)}
-                alt="profile"
-                style={{ objectFit: "cover" }}
-              />
+        {/* Sidebar overlay for mobile */}
+        {/* Only show overlay and toggle sidebar on phone size */}
+        {window.innerWidth <= 600 && sidebarOpen && (
+          <div
+            className={`sidebar-overlay visible`}
+            onClick={handleSidebarOverlay}
+            style={{ display: 'block' }}
+          />
+        )}
+        <div
+          className={`google-sidebar${sidebarOpen ? ' open' : ''}`}
+          style={
+            window.innerWidth <= 600
+              ? {
+                  position: 'fixed',
+                  top: 64,
+                  left: sidebarOpen ? 0 : '-220px',
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+                  zIndex: 1200,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                  transition: 'left 0.25s cubic-bezier(.4,0,.2,1)',
+                }
+              : {
+                  position: 'fixed',
+                  top: 64,
+                  left: 0,
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+                  zIndex: 900,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                }
+          }
+        >
+          {/* Close button for mobile sidebar */}
+          {/* No close button on sidebar for phone size, overlay closes sidebar */}
+          {teacher && (
+            <div className="sidebar-profile">
+              <div className="sidebar-img-circle">
+                <img src={teacher.profileImage || "/default-profile.png"} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', border: 'none', boxShadow: 'none' }} />
+              </div>
+              <h3>{teacher.name}</h3>
+              <p>{teacher.username}</p>
             </div>
-            <h3>{t.name || "—"}</h3>
-            <p>{t.username || "—"}</p>
-          </div>
+          )}
 
           <div className="sidebar-menu">
             <Link
               className="sidebar-btn"
               to="/dashboard"
-              style={{
-                backgroundColor: "#4b6cb7",
-                color: "#fff",
-              }}
+              style={{ backgroundColor: "#4b6cb7", color: "#fff" }}
             >
               <FaHome /> Home
             </Link>
@@ -626,23 +712,20 @@ export default function Dashboard() {
             <Link className="sidebar-btn" to="/schedule">
               <FaUsers /> Schedule
             </Link>
-            <button
-              className="sidebar-btn logout-btn"
-              onClick={handleLogout}
-            >
+            <button className="sidebar-btn logout-btn" onClick={handleLogout}>
               <FaSignOutAlt /> Logout
             </button>
           </div>
         </div>
 
-        <div className="google-main">
+        <div className="google-main posts-full-mobile">
           <div className="posts-container">
             {posts.length === 0 && <p>No posts available</p>}
             {posts.map((post) => (
               <div
                 key={post.postId}
                 ref={(el) => (postRefs.current[post.postId] = el)}
-                className="post-card"
+                className="post-box"
                 style={{
                   border:
                     highlightedPostId === post.postId
@@ -653,32 +736,16 @@ export default function Dashboard() {
                       ? "#fff9c4"
                       : "#fff",
                   transition: "background-color 0.4s, border 0.2s",
-                  padding: 12,
-                  marginBottom: 12,
+                  marginBottom: 18,
                 }}
               >
-                <div
-                  className="post-header"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                  }}
-                >
-                  <div className="img-circle">
-                    <img
-                      src={getSafeProfileImage(post.adminProfile)}
-                      alt={post.adminName || "Admin"}
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </div>
+                <div className="fb-post-top">
+                  <img
+                    src={getSafeProfileImage(post.adminProfile)}
+                    alt={post.adminName || "Admin"}
+                  />
                   <div className="post-info">
-                    <h4 style={{ margin: 0 }}>
+                    <h4 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
                       {post.adminName || "Admin"}
                     </h4>
                     <div style={{ fontSize: 12, color: "#666" }}>
@@ -689,7 +756,9 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <p className="post-message" style={{ marginTop: 12 }}>{post.message}</p>
+                <div style={{ marginTop: 12, fontSize: 17, lineHeight: 1.6, color: '#222', wordBreak: 'break-word', paddingLeft:"10px" }}>
+                  {post.message}
+                </div>
 
                 {post.postUrl && (
                   <img
@@ -700,52 +769,99 @@ export default function Dashboard() {
                       width: "100%",
                       borderRadius: 8,
                       marginTop: 8,
+                      maxHeight: 400,
+                      objectFit: 'cover',
                     }}
                   />
                 )}
 
-                <div className="post-actions">
-                                    <div className="like-button">
-                                      <button
-                                        onClick={() => handleLike(post.postId)}
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "space-between",
-                                          gap: "18px",
-                                          width: "120px",
-                                          padding: "8px 18px",
-                                          background: "transparent",
-                                          border: "none",
-                                          cursor: "pointer",
-                                          fontSize: "16px",
-                                          fontWeight: "500",
-                                          color: post.likes && teacherId && post.likes[teacherId] ? "#e0245e" : "#555",
-                                          transition: "all 0.2s ease",
-                                        }}
-                                      >
-                                        {/* LEFT: Heart + Text */}
-                                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                          {post.likes && teacherId && post.likes[teacherId] ? (
-                                            <FaHeart style={{ color: "#e0245e", fontSize: "16px" }} />
-                                          ) : (
-                                            <FaRegHeart style={{ fontSize: "16px" }} />
-                                          )}
-                
-                                          {post.likes && teacherId && post.likes[teacherId] ? "Liked" : "Like"}
-                                        </span>
-                
-                                        {/* RIGHT: Count */}
-                                        <span style={{ marginRight: "550px", fontSize: "15px", color: "#777" }}>
-                                          {post.likeCount || 0}
-                                        </span>
-                                      </button>
-                                    </div>
-                                  </div>
+                <div className="post-actions" style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 18 }}>
+                  <button
+                    onClick={() => handleLike(post.postId)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "8px 18px",
+                      background: "#f0f2f5",
+                      border: "none",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      fontSize: "16px",
+                      fontWeight: "500",
+                      color: post.likes && teacherId && post.likes[teacherId] ? "#e0245e" : "#555",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    {post.likes && teacherId && post.likes[teacherId] ? (
+                      <FaHeart style={{ color: "#e0245e", fontSize: "16px" }} />
+                    ) : (
+                      <FaRegHeart style={{ fontSize: "16px" }} />
+                    )}
+                    {post.likes && teacherId && post.likes[teacherId] ? "Liked" : "Like"}
+                    <span style={{ marginLeft: 8, fontSize: "15px", color: "#777" }}>
+                      {post.likeCount || 0}
+                    </span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
+        <style>{`
+          .posts-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            margin-left: 120px;
+          }
+          .post-box {
+            margin-left: 0;
+            margin-right: auto;
+            margin-top: 12px;
+          }
+          @media (max-width: 600px) {
+            .posts-container {
+              margin-left: 0 !important;
+            }
+            .post-box {
+              margin-top: 0 !important;
+            }
+          }
+          @media (max-width: 600px) {
+            .posts-full-mobile, .posts-container, .post-box {
+              width: 100vw !important;
+              max-width: 100vw !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              border-radius: 0 !important;
+              box-shadow: none !important;
+            }
+            .posts-container {
+              align-items: stretch;
+            }
+            .google-sidebar {
+              left: -220px;
+              transition: left 0.25s cubic-bezier(.4,0,.2,1);
+            }
+            .google-sidebar.open {
+              left: 0 !important;
+              z-index: 1202;
+            }
+            .sidebar-overlay {
+              display: block;
+              position: fixed;
+              inset: 0;
+              background: rgba(0,0,0,0.35);
+              z-index: 1200;
+              transition: opacity 0.2s;
+            }
+            .sidebar-arrow-btn {
+              display: flex !important;
+            }
+          }
+        `}</style>
       </div>
     </div>
   );

@@ -502,7 +502,21 @@ const [children, setChildren] = useState([]);
 
       <div className="google-dashboard" style={{ display: "flex" }}>
         {/* Sidebar */}
-        <div className="google-sidebar">
+        <div className="google-sidebar" style={{
+          position: 'fixed',
+          top: 64,
+          left: 0,
+          width: 200,
+          height: 'calc(100vh - 64px)',
+          background: '#fff',
+          boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+          zIndex: 900,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: 18,
+          overflowY: 'auto',
+        }}>
           {teacher && (
             <div className="sidebar-profile">
               <div className="sidebar-img-circle">

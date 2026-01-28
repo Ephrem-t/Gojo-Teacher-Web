@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { FaChevronRight } from "react-icons/fa";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -148,6 +149,8 @@ const StudentItem = ({ student, selected, onClick }) => (
 );
 
 function StudentsPage() {
+  // Responsive sidebar state for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(typeof window !== 'undefined' ? window.innerWidth > 600 : true);
   const [students, setStudents] = useState([]);
   const [error, setError] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("All");
@@ -1383,8 +1386,117 @@ React.useEffect(() => {
       </nav>
 
       <div className="google-dashboard">
-        {/* Sidebar */}
-        <div className="google-sidebar">
+        {/* Responsive sidebar open/close on resize */}
+        {typeof window !== 'undefined' && (
+          useEffect(() => {
+            const handleResize = () => {
+              if (window.innerWidth <= 600) {
+                setSidebarOpen(false);
+              } else {
+                setSidebarOpen(true);
+              }
+            };
+            window.addEventListener("resize", handleResize);
+            handleResize();
+            return () => window.removeEventListener("resize", handleResize);
+          }, [])
+        )}
+        {/* Responsive Sidebar (like Dashboard.jsx) */}
+        {typeof window !== 'undefined' && window.innerWidth <= 600 && !sidebarOpen && (
+          <button
+            className="sidebar-arrow-btn"
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              zIndex: 1300,
+              background: '#fff',
+              border: 'none',
+              borderRadius: '0 8px 8px 0',
+              boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+              padding: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar menu"
+          >
+            <FaChevronRight size={22} />
+          </button>
+        )}
+        {typeof window !== 'undefined' && window.innerWidth <= 600 && sidebarOpen && (
+          <div
+            className="sidebar-overlay visible"
+            onClick={() => setSidebarOpen(false)}
+            style={{ display: 'block', position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1200 }}
+          />
+        )}
+        <div
+          className={`google-sidebar${typeof window !== 'undefined' && window.innerWidth <= 600 && sidebarOpen ? ' open' : ''}`}
+          style={
+            typeof window !== 'undefined' && window.innerWidth <= 600
+              ? {
+                  position: 'fixed',
+                  top: 64,
+                  left: sidebarOpen ? 0 : '-220px',
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+                  zIndex: 1200,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                  borderRadius: 0,
+                  transition: 'left 0.25s cubic-bezier(.4,0,.2,1)',
+                }
+              : {
+                  position: 'fixed',
+                  top: 64,
+                  left: 0,
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+                  zIndex: 900,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                  borderRadius: 0,
+                }
+          }
+        >
+                  <style>{`
+                    @media (max-width: 600px) {
+                      .google-sidebar {
+                        left: -220px;
+                        transition: left 0.25s cubic-bezier(.4,0,.2,1);
+                        border-radius: 0 !important;
+                      }
+                      .google-sidebar.open {
+                        left: 0 !important;
+                        z-index: 1202;
+                        border-radius: 0 !important;
+                      }
+                      .sidebar-overlay {
+                        display: block;
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0,0,0,0.35);
+                        z-index: 1200;
+                        transition: opacity 0.2s;
+                      }
+                      .sidebar-arrow-btn {
+                        display: flex !important;
+                      }
+                    }
+                  `}</style>
           {teacher && (
             <div className="sidebar-profile">
               <div className="sidebar-img-circle">
@@ -1425,7 +1537,25 @@ React.useEffect(() => {
         </div>
         {/* MAIN CONTENT */}
         <div style={{ flex: 1, display: "flex", justifyContent: "center", padding: "30px" }}>
-          <div style={{ width: "300px", position: "relative", marginLeft: "50px", marginRight: isPortrait ? 0 : "50px" }}>
+           <div
+             className="student-list-card-responsive"
+             style={{
+               width: "300px",
+               position: "relative",
+               marginLeft: "50px",
+               marginRight: isPortrait ? 0 : "50px",
+             }}
+           >
+             <style>{`
+               @media (max-width: 600px) {
+                 .student-list-card-responsive {
+                   margin-left: -25px !important;
+                   margin-right: auto !important;
+                   width: 90vw !important;
+                   max-width: 90vw !important;
+                 }
+               }
+             `}</style>
             <h2 style={{ textAlign: "center", marginBottom: "20px" }}>My Students</h2>
 
             {/* Grades */}
@@ -1454,25 +1584,43 @@ React.useEffect(() => {
                 flex-direction: column;
                 margin-top: 30px;
                 gap: 12px;
-                width: 98vw;
-                max-width: 99vw;
+                width: 100%;
+                max-width: 100vw;
                 margin-left: 0;
-                margin-right: 200px;
+                margin-right: 0;
               }
-                @media (min-width: 350px) {
+              @media (max-width: 600px) {
+                .student-list-responsive {
+                  width: 100vw !important;
+                  max-width: 100vw !important;
+                  margin-left: 0 !important;
+                  margin-right: 0 !important;
+                  padding: 0 !important;
+                  align-items: flex-start !important;
+                }
+                .student-list-responsive > div {
+                  margin-left: 10px !important;
+                  padding-left: 10px !important;
+                  width: 100vw !important;
+                  max-width: 100vw !important;
+                  min-width: 100vw !important;
+                  box-sizing: border-box !important;
+                }
+              }
+              @media (min-width: 350px) {
                 .student-list-responsive {
                   width: 350px;
                   max-width: 70vw;
                 }
               }
-              @media (min-width: 600px) {
-                .student-list-responsive {
-                  width: 400px;
-                  max-width: 90vw;
-                }
-              }
-              @media (min-width: 900px) {
-                .student-list-responsive {
+               @media (max-width: 600px) {
+                 .student-list-card-responsive {
+                   margin-left: -32px !important;
+                   margin-right: auto !important;
+                   width: 80vw !important;
+                   max-width: 80vw !important;
+                 }
+               }
                   width: 500px;
                   max-width: 80vw;
                 }
@@ -1482,15 +1630,13 @@ React.useEffect(() => {
                   width: 600px;
                   max-width: 700px;
                   margin-left: -100px;
-
                 }
               }
-                @media (min-width: 1500px) {
+              @media (min-width: 1500px) {
                 .student-list-responsive {
                   width: 600px;
                   max-width: 700px;
                   margin-left: -250px;
-
                 }
               }
             `}</style>
