@@ -310,7 +310,7 @@ function Schedule() {
       position: fixed;
       top: 60px;
       right: 0;
-      width: 350px;
+      width: 420px;
       height: calc(100vh - 60px);
       z-index: 300;
       background: #fff;
@@ -340,7 +340,7 @@ function Schedule() {
     @media (max-width: 900px) {
       .google-sidebar { width: 60px; min-width: 60px; }
       .schedule-main { margin-left: 60px; padding: 17px 2vw; }
-      .right-sidebar { width: 90vw; left: 60px; right: initial; }
+      .right-sidebar { width: 100vw; left: 0; right: initial; }
     }
     @media (max-width: 600px) {
       .top-navbar { height: 54px; padding: 0 7px; }
@@ -353,7 +353,7 @@ function Schedule() {
       }
       .main-area-row { margin-top: 54px; }
       .schedule-main { margin-left: 48px; padding: 8px 2vw; border-radius: 7px; }
-      .right-sidebar { left: 48px; right: initial; width: 100vw; height: calc(100vh - 54px); }
+      .right-sidebar { left: 0; right: initial; width: 100vw; height: calc(100vh - 54px); }
       .close-sidebar-btn {
         top: 8px !important;
         right: 8px !important;
@@ -552,7 +552,7 @@ function Schedule() {
         </div>
         {/* ---- Main Content (scrollable) ---- */}
         <div className="schedule-main">
-          <div className="schedule-container" style={{width:'100%', maxWidth:900, margin:'0 auto'}}>
+          <div className="schedule-container" style={{width:'100%', maxWidth:900, margin:'0 auto', marginLeft: "150px"}}>
             {/* Filters */}
             <div style={{display:"flex", gap:"20px", marginBottom:"25px", justifyContent:"center", flexWrap:"wrap"}}>
               <div>
