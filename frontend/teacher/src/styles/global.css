@@ -495,6 +495,7 @@
 
 .google-main .marks-table-wrapper {
   position: relative; /* for arrow positioning */
+  
 }
 
 .google-main .marks-table {
@@ -2021,3 +2022,9 @@ body.sidebar-open {
   text-align: center;
   color: #777;
 }
+
+
+
+
+
+

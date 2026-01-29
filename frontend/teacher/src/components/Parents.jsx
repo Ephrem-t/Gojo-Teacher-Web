@@ -1,3 +1,28 @@
+          <style>{`
+            @media (max-width: 600px) {
+              .parent-list-card-responsive {
+                max-width: 70vw !important;
+                width: 70vw !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              .parent-list-responsive {
+                width: 70vw !important;
+                max-width: 70vw !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                padding: 0 !important;
+                align-items: flex-start !important;
+              }
+              .parent-list-item-responsive {
+                margin-left: 0 !important;
+                width: 70vw !important;
+                max-width: 70vw !important;
+                min-width: 70vw !important;
+                box-sizing: border-box !important;
+              }
+            }
+          `}</style>
 import React, { useState, useEffect, useRef } from "react";
 import {
   FaHome,
@@ -11,6 +36,7 @@ import {
   FaFacebookMessenger,
   FaCommentDots,
   FaCheck,
+  FaChevronRight,
 } from "react-icons/fa";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -41,6 +67,7 @@ const formatTime = (ts) => {
 };
 
 function TeacherParent() {
+const [sidebarOpen, setSidebarOpen] = useState(false);
 const [teacher, setTeacher] = useState(null);
   const [parents, setParents] = useState([]);
   const [selectedParent, setSelectedParent] = useState(null);
@@ -439,46 +466,101 @@ const [children, setChildren] = useState([]);
          <div className="nav-right">
                   {/* Notification Bell & Popup (shows posts and unread messages) */}
                   <div className="icon-circle" style={{ position: "relative" }}>
-                    <div onClick={() => setShowNotifications(!showNotifications)} style={{ cursor: "pointer", position: "relative" }}>
+                    <div
+                      onClick={() => setShowNotifications(!showNotifications)}
+                      style={{ cursor: "pointer", position: "relative" }}
+                      aria-label="Show notifications"
+                      tabIndex={0}
+                      role="button"
+                      onKeyPress={e => { if (e.key === 'Enter') setShowNotifications(!showNotifications); }}
+                    >
                       <FaBell size={24} />
-                      {notifications.length > 0 && (
+                      {(notifications.length + totalUnreadMessages) > 0 && (
                         <span style={{ position: "absolute", top: -5, right: -5, background: "red", color: "white", borderRadius: "50%", width: 18, height: 18, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {notifications.length}
+                          {notifications.length + totalUnreadMessages}
                         </span>
                       )}
                     </div>
 
                     {showNotifications && (
-                      <div style={{ position: "absolute", top: 30, right: 0, width: 300, maxHeight: 400, overflowY: "auto", background: "#fff", boxShadow: "0 2px 10px rgba(0,0,0,0.2)", borderRadius: 8, zIndex: 100 }}>
-                        {notifications.length > 0 ? notifications.map((notif, index) => (
-                          notif.type === "post" ? (
-                            <div key={notif.id || index} onClick={() => {
-                              navigate("/dashboard");
-                              setTimeout(() => {
-                                const postElement = postRefs?.current?.[notif.id];
-                                if (postElement) {
-                                  postElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                                  setHighlightedPostId(notif.id);
-                                  setTimeout(() => setHighlightedPostId(null), 3000);
+                      <>
+                        {/* Overlay for closing notification list by clicking outside */}
+                        <div
+                          style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.08)',
+                            zIndex: 1999,
+                          }}
+                          onClick={() => setShowNotifications(false)}
+                        />
+                        <div
+                          className="notification-popup"
+                          style={
+                            typeof window !== 'undefined' && window.innerWidth <= 600
+                              ? {
+                                  position: 'fixed',
+                                  left: '50%',
+                                  top: '8%',
+                                  transform: 'translate(-50%, 0)',
+                                  width: '90vw',
+                                  maxWidth: 340,
+                                  zIndex: 2000,
+                                  background: '#fff',
+                                  borderRadius: 12,
+                                  boxShadow: '0 2px 16px rgba(0,0,0,0.18)',
+                                  maxHeight: '70vh',
+                                  overflowY: 'auto',
+                                  padding: 12,
                                 }
-                              }, 150);
-                              setNotifications(prev => prev.filter((_, i) => i !== index));
-                              setShowNotifications(false);
-                            }} style={{ display: "flex", alignItems: "center", padding: "10px 15px", borderBottom: "1px solid #eee", cursor: "pointer" }}>
-                              <img src={notif.adminProfile} alt={notif.adminName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
-                              <div><strong>{notif.adminName}</strong><p style={{ margin: 0, fontSize: 12 }}>{notif.title}</p></div>
-                            </div>
-                          ) : (
-                            <div key={notif.chatId || index} onClick={() => {
+                              : {
+                                  position: 'absolute',
+                                  top: 30,
+                                  right: 0,
+                                  width: 300,
+                                  maxHeight: 400,
+                                  overflowY: 'auto',
+                                  background: '#fff',
+                                  boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                                  borderRadius: 8,
+                                  zIndex: 100,
+                                }
+                          }
+                        >
+                          {/* Show post notifications */}
+                          {notifications.length > 0 && notifications.map((notif, index) => (
+                            notif.type === "post" ? (
+                              <div key={notif.id || index} onClick={() => {
+                                navigate("/dashboard");
+                                setTimeout(() => {
+                                  const postElement = postRefs?.current?.[notif.id];
+                                  if (postElement) {
+                                    postElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                                    setHighlightedPostId(notif.id);
+                                    setTimeout(() => setHighlightedPostId(null), 3000);
+                                  }
+                                }, 150);
+                                setNotifications(prev => prev.filter((_, i) => i !== index));
+                                setShowNotifications(false);
+                              }} style={{ display: "flex", alignItems: "center", padding: "10px 15px", borderBottom: "1px solid #eee", cursor: "pointer" }}>
+                                <img src={notif.adminProfile} alt={notif.adminName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
+                                <div><strong>{notif.adminName}</strong><p style={{ margin: 0, fontSize: 12 }}>{notif.title}</p></div>
+                              </div>
+                            ) : null
+                          ))}
+                          {/* Show unread message notifications */}
+                          {totalUnreadMessages > 0 && conversations.filter(c => c.unreadForMe > 0).map((conv, idx) => (
+                            <div key={conv.chatId || idx} onClick={() => {
                               setShowNotifications(false);
                               navigate("/all-chat");
                             }} style={{ display: "flex", alignItems: "center", padding: "10px 15px", borderBottom: "1px solid #eee", cursor: "pointer" }}>
-                              <img src={notif.profile || "/default-profile.png"} alt={notif.displayName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
-                              <div><strong>{notif.displayName}</strong><p style={{ margin: 0, fontSize: 12, color: '#0b78f6' }}>New message</p></div>
+                              <img src={conv.profile || "/default-profile.png"} alt={conv.displayName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
+                              <div><strong>{conv.displayName}</strong><p style={{ margin: 0, fontSize: 12, color: '#0b78f6' }}>New message</p></div>
                             </div>
-                          )
-                        )) : <div style={{ padding: 15 }}>No notifications</div>}
-                      </div>
+                          ))}
+                          {notifications.length === 0 && totalUnreadMessages === 0 && <div style={{ padding: 15 }}>No notifications</div>}
+                        </div>
+                      </>
                     )}
                   </div>
         
@@ -501,22 +583,102 @@ const [children, setChildren] = useState([]);
       </nav>
 
       <div className="google-dashboard" style={{ display: "flex" }}>
-        {/* Sidebar */}
-        <div className="google-sidebar" style={{
-          position: 'fixed',
-          top: 64,
-          left: 0,
-          width: 200,
-          height: 'calc(100vh - 64px)',
-          background: '#fff',
-          boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
-          zIndex: 900,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: 18,
-          overflowY: 'auto',
-        }}>
+        {/* Responsive Sidebar (like AdminPage.jsx) */}
+        {typeof window !== 'undefined' && window.innerWidth <= 600 && !sidebarOpen && (
+          <button
+            className="sidebar-arrow-btn"
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              zIndex: 1300,
+              background: '#fff',
+              border: 'none',
+              borderRadius: '0 8px 8px 0',
+              boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+              padding: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar menu"
+          >
+            <FaChevronRight size={22} />
+          </button>
+        )}
+        {typeof window !== 'undefined' && window.innerWidth <= 600 && sidebarOpen && (
+          <div
+            className="sidebar-overlay visible"
+            onClick={() => setSidebarOpen(false)}
+            style={{ display: 'block', position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1200 }}
+          />
+        )}
+        <div
+          className={`google-sidebar${typeof window !== 'undefined' && window.innerWidth <= 600 && sidebarOpen ? ' open' : ''}`}
+          style={
+            typeof window !== 'undefined' && window.innerWidth <= 600
+              ? {
+                  position: 'fixed',
+                  top: 64,
+                  left: sidebarOpen ? 0 : '-220px',
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+                  zIndex: 1200,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                  borderRadius: 0,
+                  transition: 'left 0.25s cubic-bezier(.4,0,.2,1)',
+                }
+              : {
+                  position: 'fixed',
+                  top: 64,
+                  left: 0,
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+                  zIndex: 900,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                  borderRadius: 0,
+                }
+          }
+        >
+          <style>{`
+            @media (max-width: 600px) {
+              .google-sidebar {
+                left: -220px;
+                transition: left 0.25s cubic-bezier(.4,0,.2,1);
+                border-radius: 0 !important;
+              }
+              .google-sidebar.open {
+                left: 0 !important;
+                z-index: 1202;
+                border-radius: 0 !important;
+              }
+              .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.35);
+                z-index: 1200;
+                transition: opacity 0.2s;
+              }
+              .sidebar-arrow-btn {
+                display: flex !important;
+              }
+            }
+          `}</style>
           {teacher && (
             <div className="sidebar-profile">
               <div className="sidebar-img-circle">
@@ -541,7 +703,7 @@ const [children, setChildren] = useState([]);
 
         {/* MAIN */}
         <main style={{ flex: 1, padding: 30 }}>
-          <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div className="parent-list-card-responsive" style={{ maxWidth: 480, margin: "0 auto", display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
             <section style={{ flex: "1 1 320px", minWidth: 280 }}>
               <h2 style={{ textAlign: "center", marginBottom: 20, color: "#4b6cb7", fontWeight: 700 }}>Parents</h2>
 
@@ -550,11 +712,12 @@ const [children, setChildren] = useState([]);
               ) : parents.length === 0 ? (
                 <p style={{ textAlign: "center", fontSize: 18, color: "#999" }}>No parents found.</p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+                <div className="parent-list-responsive" style={{ display: "flex", flexDirection: "column", gap: 15 }}>
                   {parents.map((p) => (
                     <div
                       key={p.id}
                       onClick={() => setSelectedParent(p)}
+                      className="parent-list-item-responsive"
                       style={{
                         display: "flex",
                         gap: 15,
@@ -568,6 +731,31 @@ const [children, setChildren] = useState([]);
                         alignItems: "center",
                       }}
                     >
+                                <style>{`
+                                  @media (max-width: 600px) {
+                                    .parent-list-card-responsive {
+                                      max-width: 99vw !important;
+                                      width: 99vw !important;
+                                      margin: 0 !important;
+                                      padding: 0 !important;
+                                    }
+                                    .parent-list-responsive {
+                                      width: 99vw !important;
+                                      max-width: 99vw !important;
+                                      margin-left: 0 !important;
+                                      margin-right: 0 !important;
+                                      padding: 0 !important;
+                                      align-items: flex-start !important;
+                                    }
+                                    .parent-list-item-responsive {
+                                      margin-left: -28px !important;
+                                      width: 99vw !important;
+                                      max-width: 99vw !important;
+                                      min-width: 99vw !important;
+                                      box-sizing: border-box !important;
+                                    }
+                                  }
+                                `}</style>
                       <img src={p.profileImage} alt={p.name} style={{ width: 60, height: 60, borderRadius: "50%", objectFit: "cover" }} />
                       <div>
                         <h3 style={{ margin: 0, fontSize: 18 }}>{p.name}</h3>

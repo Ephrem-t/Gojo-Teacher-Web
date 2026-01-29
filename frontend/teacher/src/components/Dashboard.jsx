@@ -525,57 +525,90 @@ export default function Dashboard() {
   </div>
 
               {showNotifications && (
-    <div className="notification-popup">
-      {[...notifications, ...messageNotifs].length > 0 ? (
-        [...notifications, ...messageNotifs].map((n, i) => (
-          <div
-            key={n.id || i}
-            className="notification-item"
-            onClick={() => {
-              if (n.isMessage) {
-                navigate("/all-chat");
-                setShowNotifications(false);
-              } else {
-                            if (teacherId) saveSeenPost(teacherId, n.id); // mark as seen
-                setNotifications(prev => prev.filter(o => o.id !== n.id));
-                setShowNotifications(false);
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            aria-label={n.isMessage ? "See message notification " + n.title : "See post notification " + n.title}
-            onKeyPress={e => {
-              if (e.key === 'Enter') {
-                if (n.isMessage) {
-                  navigate("/all-chat");
-                  setShowNotifications(false);
-                } else {
-                  if (teacherId) saveSeenPost(teacherId, n.id);
-                  setNotifications(prev => prev.filter(o => o.id !== n.id));
-                  setShowNotifications(false);
-                }
-              }
-            }}
-          >
-            <img
-              src={getSafeProfileImage(n.adminProfile)}
-              alt={n.adminName || "Admin"}
-              className="notification-profile"
-            />
-            <div>
-              <strong>{n.adminName}</strong>
-              <div className="notification-title">{n.title}</div>
-              {n.isMessage && (
-                <span style={{ color: '#0b78f6', fontSize: 12, fontWeight: 500 }}>[Message]</span>
+                <>
+                  {/* Overlay for closing notification list by clicking outside */}
+                  <div
+                    style={{
+                      position: 'fixed',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.08)',
+                      zIndex: 1999,
+                    }}
+                    onClick={() => setShowNotifications(false)}
+                  />
+                  <div
+                    className="notification-popup"
+                    style={
+                      typeof window !== 'undefined' && window.innerWidth <= 600
+                        ? {
+                            position: 'fixed',
+                            left: '50%',
+                            top: '8%',
+                            transform: 'translate(-50%, 0)',
+                            width: '90vw',
+                            maxWidth: 340,
+                            zIndex: 2000,
+                            background: '#fff',
+                            borderRadius: 12,
+                            boxShadow: '0 2px 16px rgba(0,0,0,0.18)',
+                            maxHeight: '70vh',
+                            overflowY: 'auto',
+                            padding: 12,
+                          }
+                        : undefined
+                    }
+                  >
+                    {[...notifications, ...messageNotifs].length > 0 ? (
+                      [...notifications, ...messageNotifs].map((n, i) => (
+                        <div
+                          key={n.id || i}
+                          className="notification-item"
+                          onClick={() => {
+                            if (n.isMessage) {
+                              navigate("/all-chat");
+                              setShowNotifications(false);
+                            } else {
+                              if (teacherId) saveSeenPost(teacherId, n.id); // mark as seen
+                              setNotifications(prev => prev.filter(o => o.id !== n.id));
+                              setShowNotifications(false);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={n.isMessage ? "See message notification " + n.title : "See post notification " + n.title}
+                          onKeyPress={e => {
+                            if (e.key === 'Enter') {
+                              if (n.isMessage) {
+                                navigate("/all-chat");
+                                setShowNotifications(false);
+                              } else {
+                                if (teacherId) saveSeenPost(teacherId, n.id);
+                                setNotifications(prev => prev.filter(o => o.id !== n.id));
+                                setShowNotifications(false);
+                              }
+                            }
+                          }}
+                        >
+                          <img
+                            src={getSafeProfileImage(n.adminProfile)}
+                            alt={n.adminName || "Admin"}
+                            className="notification-profile"
+                          />
+                          <div>
+                            <strong>{n.adminName}</strong>
+                            <div className="notification-title">{n.title}</div>
+                            {n.isMessage && (
+                              <span style={{ color: '#0b78f6', fontSize: 12, fontWeight: 500 }}>[Message]</span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="no-notifications">No notifications</div>
+                    )}
+                  </div>
+                </>
               )}
-            </div>
-          </div>
-        ))
-      ) : (
-        <div className="no-notifications">No notifications</div>
-      )}
-    </div>
-  )}
 </div>
 
           {/* Messenger */}

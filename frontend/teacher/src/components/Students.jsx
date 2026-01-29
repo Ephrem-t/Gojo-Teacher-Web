@@ -1219,6 +1219,10 @@ React.useEffect(() => {
             <div
               onClick={() => setShowNotifications(!showNotifications)}
               style={{ cursor: "pointer", position: "relative" }}
+              aria-label="Show notifications"
+              tabIndex={0}
+              role="button"
+              onKeyPress={e => { if (e.key === 'Enter') setShowNotifications(!showNotifications); }}
             >
               <FaBell size={24} />
               {(notifications.length + totalUnreadMessages) > 0 && (
@@ -1244,112 +1248,133 @@ React.useEffect(() => {
             </div>
 
             {showNotifications && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: 30,
-                  right: 0,
-                  width: 300,
-                  maxHeight: 400,
-                  overflowY: "auto",
-                  background: "#fff",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-                  borderRadius: 8,
-                  zIndex: 100,
-                }}
-              >
-                {/* Show post notifications */}
-                {notifications.length > 0 && notifications.map((post, index) => (
-                  <div
-                    key={post.id || index}
-                    onClick={() => {
-                      setNotifications(prev => prev.filter((_, i) => i !== index));
-                      setShowNotifications(false);
-                      navigate("/dashboard");
-                      setTimeout(() => {
-                        const postElement = postRefs.current[post.id];
-                        if (postElement) {
-                          postElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                          setHighlightedPostId(post.id);
-                          setTimeout(() => setHighlightedPostId(null), 3000);
+              <>
+                {/* Overlay for closing notification list by clicking outside */}
+                <div
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.08)',
+                    zIndex: 1999,
+                  }}
+                  onClick={() => setShowNotifications(false)}
+                />
+                <div
+                  className="notification-popup"
+                  style={
+                    typeof window !== 'undefined' && window.innerWidth <= 600
+                      ? {
+                          position: 'fixed',
+                          left: '50%',
+                          top: '8%',
+                          transform: 'translate(-50%, 0)',
+                          width: '90vw',
+                          maxWidth: 340,
+                          zIndex: 2000,
+                          background: '#fff',
+                          borderRadius: 12,
+                          boxShadow: '0 2px 16px rgba(0,0,0,0.18)',
+                          maxHeight: '70vh',
+                          overflowY: 'auto',
+                          padding: 12,
                         }
-                      }, 150);
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "10px 15px",
-                      borderBottom: "1px solid #eee",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <img
-                      src={post.adminProfile}
-                      alt={post.adminName}
-                      style={{
-                        width: 35,
-                        height: 35,
-                        borderRadius: "50%",
-                        marginRight: 10,
+                      : { zIndex: 2000, position: 'absolute', top: 30, right: 0, width: 300, maxHeight: 400, overflowY: 'auto', background: '#fff', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', borderRadius: 8 }
+                  }
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Show post notifications */}
+                  {notifications.length > 0 && notifications.map((post, index) => (
+                    <div
+                      key={post.id || index}
+                      onClick={() => {
+                        setNotifications(prev => prev.filter((_, i) => i !== index));
+                        setShowNotifications(false);
+                        navigate("/dashboard");
+                        setTimeout(() => {
+                          const postElement = postRefs.current[post.id];
+                          if (postElement) {
+                            postElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                            setHighlightedPostId(post.id);
+                            setTimeout(() => setHighlightedPostId(null), 3000);
+                          }
+                        }, 150);
                       }}
-                    />
-                    <div>
-                      <strong>{post.adminName}</strong>
-                      <p style={{ margin: 0, fontSize: 12 }}>{post.title}</p>
-                    </div>
-                  </div>
-                ))}
-                {/* Show unread message notifications */}
-                {totalUnreadMessages > 0 && conversations.filter(c => c.unreadForMe > 0).map((conv, idx) => (
-                  <div
-                    key={conv.chatId || idx}
-                    onClick={() => {
-                      setShowNotifications(false);
-                      navigate("/all-chat");
-                    }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "10px 15px",
-                      borderBottom: "1px solid #eee",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <img
-                      src={conv.profile || "/default-profile.png"}
-                      alt={conv.displayName}
                       style={{
-                        width: 35,
-                        height: 35,
-                        borderRadius: "50%",
-                        marginRight: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "10px 15px",
+                        borderBottom: "1px solid #eee",
+                        cursor: "pointer",
                       }}
-                    />
-                    <div>
-                      <strong>{conv.displayName}</strong>
-                      <p style={{ margin: 0, fontSize: 12, color: '#0b78f6', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {/* show tick only if the last message was sent by me (teacher) */}
-                        {conv.lastMessageSenderId === teacherUserId ? (
-                          <span style={{ color: conv.lastMessageSeen ? '#0bda63' : '#cbd5e1' }}>
-                            {conv.lastMessageSeen ? '✓✓' : '✓'}
-                          </span>
-                        ) : null}
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
-                          {conv.lastMessageText || 'New message'}
-                        </span>
-                        {conv.lastMessageSeenAt && (
-                          <span style={{ marginLeft: 6, color: '#64748b', fontSize: 11 }}>
-                            {new Date(conv.lastMessageSeenAt).toLocaleTimeString()}
-                          </span>
-                        )}
-                      </p>
+                    >
+                      <img
+                        src={post.adminProfile}
+                        alt={post.adminName}
+                        style={{
+                          width: 35,
+                          height: 35,
+                          borderRadius: "50%",
+                          marginRight: 10,
+                        }}
+                      />
+                      <div>
+                        <strong>{post.adminName}</strong>
+                        <p style={{ margin: 0, fontSize: 12 }}>{post.title}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {notifications.length === 0 && totalUnreadMessages === 0 && (
-                  <div style={{ padding: 15 }}>No notifications</div>
-                )}
-              </div>
+                  ))}
+                  {/* Show unread message notifications */}
+                  {totalUnreadMessages > 0 && conversations.filter(c => c.unreadForMe > 0).map((conv, idx) => (
+                    <div
+                      key={conv.chatId || idx}
+                      onClick={() => {
+                        setShowNotifications(false);
+                        navigate("/all-chat");
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        padding: "10px 15px",
+                        borderBottom: "1px solid #eee",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <img
+                        src={conv.profile || "/default-profile.png"}
+                        alt={conv.displayName}
+                        style={{
+                          width: 35,
+                          height: 35,
+                          borderRadius: "50%",
+                          marginRight: 10,
+                        }}
+                      />
+                      <div>
+                        <strong>{conv.displayName}</strong>
+                        <p style={{ margin: 0, fontSize: 12, color: '#0b78f6', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {/* show tick only if the last message was sent by me (teacher) */}
+                          {conv.lastMessageSenderId === teacherUserId ? (
+                            <span style={{ color: conv.lastMessageSeen ? '#0bda63' : '#cbd5e1' }}>
+                              {conv.lastMessageSeen ? '✓✓' : '✓'}
+                            </span>
+                          ) : null}
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                            {conv.lastMessageText || 'New message'}
+                          </span>
+                          {conv.lastMessageSeenAt && (
+                            <span style={{ marginLeft: 6, color: '#64748b', fontSize: 11 }}>
+                              {new Date(conv.lastMessageSeenAt).toLocaleTimeString()}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {notifications.length === 0 && totalUnreadMessages === 0 && (
+                    <div style={{ padding: 15 }}>No notifications</div>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
@@ -1540,19 +1565,19 @@ React.useEffect(() => {
            <div
              className="student-list-card-responsive"
              style={{
-               width: "300px",
+               width: "220px",
                position: "relative",
-               marginLeft: "50px",
-               marginRight: isPortrait ? 0 : "50px",
+               marginLeft: "30px",
+               marginRight: isPortrait ? 0 : "30px",
              }}
            >
              <style>{`
                @media (max-width: 600px) {
                  .student-list-card-responsive {
-                   margin-left: -25px !important;
+                   margin-left: -16px !important;
                    margin-right: auto !important;
-                   width: 90vw !important;
-                   max-width: 90vw !important;
+                   width: 70vw !important;
+                   max-width: 70vw !important;
                  }
                }
              `}</style>

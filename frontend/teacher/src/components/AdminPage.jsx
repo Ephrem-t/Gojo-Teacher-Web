@@ -16,6 +16,7 @@ import {
   FaCommentDots,
   FaCheck,
   FaPaperPlane,
+  FaChevronRight,
 } from "react-icons/fa";
 import "../styles/global.css";
 
@@ -72,7 +73,7 @@ const AdminItem = ({ admin, selected, onClick }) => (
         height: "50px",
         borderRadius: "50%",
         objectFit: "cover",
-        border: selected ? "3px solid #4b6cb7" : "3px solid transparent",
+        border: selected ? "3px solid #4b6cb7" : "3px solid red",
       }}
     />
     <div>
@@ -83,6 +84,8 @@ const AdminItem = ({ admin, selected, onClick }) => (
 );
 
 function AdminPage() {
+    // Sidebar open state for mobile
+    const [sidebarOpen, setSidebarOpen] = useState(false);
   // ---------------- State ----------------
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -460,10 +463,10 @@ React.useEffect(() => {
 
 // compute admin list main column width: keep small-device default, expand on larger screens
 const mainListWidth = (() => {
-  if (screenWidth >= 1800) return "800px";
-  if (screenWidth >= 1500) return "600px";
-  if (screenWidth >= 1200) return "400px";
-  return "300px"; // default for small and medium screens (preserves existing look)
+  if (screenWidth >= 1800) return "1000px";
+  if (screenWidth >= 1500) return "800px";
+  if (screenWidth >= 1200) return "600px";
+  return "400px"; // default for small and medium screens (wider than before)
 })();
 
 
@@ -479,7 +482,14 @@ const mainListWidth = (() => {
         <div className="nav-right">
           {/* Notification Bell & Popup (shows posts and unread messages) */}
           <div className="icon-circle" style={{ position: "relative" }}>
-            <div onClick={() => setShowNotifications(!showNotifications)} style={{ cursor: "pointer", position: "relative" }}>
+            <div
+              onClick={() => setShowNotifications(!showNotifications)}
+              style={{ cursor: "pointer", position: "relative" }}
+              aria-label="Show notifications"
+              tabIndex={0}
+              role="button"
+              onKeyPress={e => { if (e.key === 'Enter') setShowNotifications(!showNotifications); }}
+            >
               <FaBell size={24} />
               {(notifications.length + totalUnreadMessages) > 0 && (
                 <span style={{ position: "absolute", top: -5, right: -5, background: "red", color: "white", borderRadius: "50%", width: 18, height: 18, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -489,38 +499,82 @@ const mainListWidth = (() => {
             </div>
 
             {showNotifications && (
-              <div style={{ position: "absolute", top: 30, right: 0, width: 300, maxHeight: 400, overflowY: "auto", background: "#fff", boxShadow: "0 2px 10px rgba(0,0,0,0.2)", borderRadius: 8, zIndex: 100 }}>
-                {/* Show post notifications */}
-                {notifications.length > 0 && notifications.map((post, index) => (
-                  <div key={post.id || index} onClick={() => {
-                    navigate("/dashboard");
-                    setTimeout(() => {
-                      const postElement = postRefs.current[post.id];
-                      if (postElement) {
-                        postElement.scrollIntoView({ behavior: "smooth", block: "center" });
-                        setHighlightedPostId(post.id);
-                        setTimeout(() => setHighlightedPostId(null), 3000);
-                      }
-                    }, 150);
-                    setNotifications(prev => prev.filter((_, i) => i !== index));
-                    setShowNotifications(false);
-                  }} style={{ display: "flex", alignItems: "center", padding: "10px 15px", borderBottom: "1px solid #eee", cursor: "pointer" }}>
-                    <img src={post.adminProfile} alt={post.adminName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
-                    <div><strong>{post.adminName}</strong><p style={{ margin: 0, fontSize: 12 }}>{post.title}</p></div>
-                  </div>
-                ))}
-                {/* Show unread message notifications */}
-                {totalUnreadMessages > 0 && conversations.filter(c => c.unreadForMe > 0).map((conv, idx) => (
-                  <div key={conv.chatId || idx} onClick={() => {
-                    setShowNotifications(false);
-                    navigate("/all-chat");
-                  }} style={{ display: "flex", alignItems: "center", padding: "10px 15px", borderBottom: "1px solid #eee", cursor: "pointer" }}>
-                    <img src={conv.profile || "/default-profile.png"} alt={conv.displayName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
-                    <div><strong>{conv.displayName}</strong><p style={{ margin: 0, fontSize: 12, color: '#0b78f6' }}>New message</p></div>
-                  </div>
-                ))}
-                {notifications.length === 0 && totalUnreadMessages === 0 && <div style={{ padding: 15 }}>No notifications</div>}
-              </div>
+              <>
+                {/* Overlay for closing notification list by clicking outside */}
+                <div
+                  style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.08)',
+                    zIndex: 1999,
+                  }}
+                  onClick={() => setShowNotifications(false)}
+                />
+                <div
+                  className="notification-popup"
+                  style={
+                    typeof window !== 'undefined' && window.innerWidth <= 600
+                      ? {
+                          position: 'fixed',
+                          left: '50%',
+                          top: '8%',
+                          transform: 'translate(-50%, 0)',
+                          width: '90vw',
+                          maxWidth: 340,
+                          zIndex: 2000,
+                          background: '#fff',
+                          borderRadius: 12,
+                          boxShadow: '0 2px 16px rgba(0,0,0,0.18)',
+                          maxHeight: '70vh',
+                          overflowY: 'auto',
+                          padding: 12,
+                        }
+                      : {
+                          position: 'absolute',
+                          top: 30,
+                          right: 0,
+                          width: 300,
+                          maxHeight: 400,
+                          overflowY: 'auto',
+                          background: '#fff',
+                          boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                          borderRadius: 8,
+                          zIndex: 100,
+                        }
+                  }
+                >
+                  {/* Show post notifications */}
+                  {notifications.length > 0 && notifications.map((post, index) => (
+                    <div key={post.id || index} onClick={() => {
+                      navigate("/dashboard");
+                      setTimeout(() => {
+                        const postElement = postRefs.current[post.id];
+                        if (postElement) {
+                          postElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                          setHighlightedPostId(post.id);
+                          setTimeout(() => setHighlightedPostId(null), 3000);
+                        }
+                      }, 150);
+                      setNotifications(prev => prev.filter((_, i) => i !== index));
+                      setShowNotifications(false);
+                    }} style={{ display: "flex", alignItems: "center", padding: "10px 15px", borderBottom: "1px solid #eee", cursor: "pointer" }}>
+                      <img src={post.adminProfile} alt={post.adminName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
+                      <div><strong>{post.adminName}</strong><p style={{ margin: 0, fontSize: 12 }}>{post.title}</p></div>
+                    </div>
+                  ))}
+                  {/* Show unread message notifications */}
+                  {totalUnreadMessages > 0 && conversations.filter(c => c.unreadForMe > 0).map((conv, idx) => (
+                    <div key={conv.chatId || idx} onClick={() => {
+                      setShowNotifications(false);
+                      navigate("/all-chat");
+                    }} style={{ display: "flex", alignItems: "center", padding: "10px 15px", borderBottom: "1px solid #eee", cursor: "pointer" }}>
+                      <img src={conv.profile || "/default-profile.png"} alt={conv.displayName} style={{ width: 35, height: 35, borderRadius: "50%", marginRight: 10 }} />
+                      <div><strong>{conv.displayName}</strong><p style={{ margin: 0, fontSize: 12, color: '#0b78f6' }}>New message</p></div>
+                    </div>
+                  ))}
+                  {notifications.length === 0 && totalUnreadMessages === 0 && <div style={{ padding: 15 }}>No notifications</div>}
+                </div>
+              </>
             )}
           </div>
 
@@ -543,22 +597,102 @@ const mainListWidth = (() => {
       </nav>
 
       <div className="google-dashboard">
-        {/* Sidebar */}
-        <div className="google-sidebar" style={{
-          position: 'fixed',
-          top: 64,
-          left: 0,
-          width: 200,
-          height: 'calc(100vh - 64px)',
-          background: '#fff',
-          boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
-          zIndex: 900,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: 18,
-          overflowY: 'auto',
-        }}>
+        {/* Responsive Sidebar (like Students.jsx) */}
+        {typeof window !== 'undefined' && window.innerWidth <= 600 && !sidebarOpen && (
+          <button
+            className="sidebar-arrow-btn"
+            style={{
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              zIndex: 1300,
+              background: '#fff',
+              border: 'none',
+              borderRadius: '0 8px 8px 0',
+              boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+              padding: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar menu"
+          >
+            <FaChevronRight size={22} />
+          </button>
+        )}
+        {typeof window !== 'undefined' && window.innerWidth <= 600 && sidebarOpen && (
+          <div
+            className="sidebar-overlay visible"
+            onClick={() => setSidebarOpen(false)}
+            style={{ display: 'block', position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1200 }}
+          />
+        )}
+        <div
+          className={`google-sidebar${typeof window !== 'undefined' && window.innerWidth <= 600 && sidebarOpen ? ' open' : ''}`}
+          style={
+            typeof window !== 'undefined' && window.innerWidth <= 600
+              ? {
+                  position: 'fixed',
+                  top: 64,
+                  left: sidebarOpen ? 0 : '-220px',
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.12)',
+                  zIndex: 1200,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                  borderRadius: 0,
+                  transition: 'left 0.25s cubic-bezier(.4,0,.2,1)',
+                }
+              : {
+                  position: 'fixed',
+                  top: 64,
+                  left: 0,
+                  width: 200,
+                  height: 'calc(100vh - 64px)',
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.04)',
+                  zIndex: 900,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 18,
+                  overflowY: 'auto',
+                  borderRadius: 0,
+                }
+          }
+        >
+          <style>{`
+            @media (max-width: 600px) {
+              .google-sidebar {
+                left: -220px;
+                transition: left 0.25s cubic-bezier(.4,0,.2,1);
+                border-radius: 0 !important;
+              }
+              .google-sidebar.open {
+                left: 0 !important;
+                z-index: 1202;
+                border-radius: 0 !important;
+              }
+              .sidebar-overlay {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.35);
+                z-index: 1200;
+                transition: opacity 0.2s;
+              }
+              .sidebar-arrow-btn {
+                display: flex !important;
+              }
+            }
+          `}</style>
           {teacher && (
             <div className="sidebar-profile">
               <div className="sidebar-img-circle">
@@ -583,7 +717,30 @@ const mainListWidth = (() => {
 
         {/* MAIN */}
         <div style={{ flex: 1, display: "flex", justifyContent: "center", padding: "30px" }}>
-          <div style={{ width: mainListWidth, marginLeft: "40px" }}>
+          <div className="admin-list-card-responsive" style={{ width: "500px", marginLeft: "30px" }}>
+            <style>{`
+              @media (max-width: 600px) {
+                .admin-list-card-responsive {
+                  margin-left: -10px !important;
+                  margin-right: auto !important;
+                  padding-left: 0 !important;
+                  width: 90vw !important;
+                  max-width: 90vw !important;
+                }
+              }
+              @media (min-width: 1200px) {
+                .admin-list-card-responsive {
+                  width: 600px !important;
+                  max-width: 600px !important;
+                }
+              }
+              @media (min-width: 1500px) {
+                .admin-list-card-responsive {
+                  width: 700px !important;
+                  max-width: 700px !important;
+                }
+              }
+            `}</style>
             <h2 style={{ textAlign: "center", marginBottom: "20px" }}>All Admins</h2>
 
             {loading && <p>Loading admins...</p>}
