@@ -15,6 +15,7 @@ import {
   FaFacebookMessenger,
   FaChevronRight,
   FaClipboardCheck
+  , FaFileExcel, FaPrint, FaFileDownload
 } from "react-icons/fa";
 import "../styles/global.css";
 
@@ -528,6 +529,81 @@ export default function MarksPage() {
     document.head.appendChild(style);
   }, []);
 
+  // --- Export / Print helpers ---
+  const buildTableRows = () => {
+    const headers = ["Student", ...assessmentList.map(a => `${a.name} (${a.max})`), "Total", "Grade"];
+    const rows = [headers];
+    Object.entries(studentMarks).forEach(([sid, marks]) => {
+      const student = students.find((s) => s.id === sid) || { name: sid };
+      const scores = Object.values(marks).map((m) => (m.score != null ? m.score : ""));
+      const total = Object.values(marks).reduce((s, a) => s + (a.score || 0), 0);
+      const grade =
+        total >= 90
+          ? "A"
+          : total >= 80
+          ? "B"
+          : total >= 70
+          ? "C"
+          : total >= 60
+          ? "D"
+          : "F";
+      rows.push([student.name, ...scores, total, grade]);
+    });
+    return rows;
+  };
+
+  const downloadCSV = (filename = "marks.csv") => {
+    const rows = buildTableRows();
+    const csv = rows
+      .map((r) =>
+        r
+          .map((cell) => {
+            if (cell == null) return "";
+            const cellStr = String(cell);
+            return cellStr.includes(",") || cellStr.includes("\n") ? `"${cellStr.replace(/"/g, '""')}"` : cellStr;
+          })
+          .join(",")
+      )
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadExcel = (filename = "marks.xls") => {
+    const rows = buildTableRows();
+    let html = "<table border=1>";
+    rows.forEach((r) => {
+      html += "<tr>" + r.map((c) => `<td>${String(c ?? "").replace(/</g, "&lt;")}</td>`).join("") + "</tr>";
+    });
+    html += "</table>";
+    const uri = "data:application/vnd.ms-excel;charset=utf-8," + encodeURIComponent(html);
+    const link = document.createElement("a");
+    link.href = uri;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    const wrapper = marksWrapperRef.current;
+    if (!wrapper) return window.print();
+    const html = `<!doctype html><html><head><title>Marks</title><meta charset="utf-8"><style>table{border-collapse:collapse;}td,th{padding:8px;border:1px solid #ccc;}</style></head><body>${wrapper.innerHTML}</body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) return alert("Pop-up blocked. Please allow popups to print.");
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 200);
+  };
+
   return (
     <div className="dashboard-page">
       {/* Top Navbar */}
@@ -870,31 +946,53 @@ export default function MarksPage() {
               </div>
             )}
 
-            {structureSubmitted && (
-              <button
-                style={{
-                  marginBottom: "30px",
-                  padding: "10px 18px",
-                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                  color: "#fff",
-                  borderRadius: "12px",
-                  border: "none",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-                  transition: "0.3s all",
-                }}
-                onClick={() => {
-                  setStructureSubmitted(false);
-                  setStudentMarks({});
-                }}
-              >
-                <FaEdit /> Edit Assessment Structure
-              </button>
-            )}
+    {structureSubmitted && (
+      <div style={{ display: "flex", gap: "16px", marginBottom: "30px" }}>
+        <button
+          style={{
+            marginBottom: "0px",
+            padding: "10px 18px",
+            background: "linear-gradient(135deg, #f59e0b, #d97706)",
+            color: "#fff",
+            borderRadius: "12px",
+            border: "none",
+            fontWeight: "600",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+            transition: "0.3s all",
+          }}
+          onClick={() => {
+            setStructureSubmitted(false);
+            setStudentMarks({});
+          }}
+        >
+          <FaEdit /> Edit Assessment Structure
+        </button>
+        <button
+          onClick={() => downloadExcel()}
+          style={{
+            padding: "10px 16px",
+            background: "#28a745",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            marginLeft: "0px",
+            gap: 8,
+            boxShadow: "0 2px 8px 0 rgba(40,167,69,.07)",
+            cursor: "pointer"
+          }}
+          title="Download as Excel"
+        >
+          <FaFileExcel /> Download Excel
+        </button>
+      </div>
+    )}
 
             {/* Assessment Builder */}
             {selectedCourseId && !structureSubmitted && (
@@ -1010,6 +1108,8 @@ export default function MarksPage() {
                 >
                   Submit Structure
                 </button>
+
+                
               </div>
             )}
 
@@ -1028,6 +1128,9 @@ export default function MarksPage() {
                   whiteSpace: "normal",
                 }}
               >
+                  
+ 
+    
                 <table
                   className="marks-table"
                   style={{
