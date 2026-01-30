@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import {
   FaPlus,
   FaTrash,
@@ -14,7 +17,8 @@ import {
   FaChalkboardTeacher,
   FaFacebookMessenger,
   FaChevronRight,
-  FaClipboardCheck
+  FaClipboardCheck,
+  FaSortNumericDown
   , FaFileExcel, FaPrint, FaFileDownload
 } from "react-icons/fa";
 import "../styles/global.css";
@@ -167,6 +171,43 @@ export default function MarksPage() {
     };
     fetchStudents();
   }, [teacherUserId]);
+
+  // Ensure newly registered students get the current assessment structure
+  useEffect(() => {
+    if (!selectedCourseId) return;
+    if (!assessmentList || assessmentList.length === 0) return;
+    const course = courses.find((c) => c.id === selectedCourseId);
+    if (!course) return;
+    const filteredStudents = students.filter((s) => s.grade === course.grade && s.section === course.section);
+    // Build structure object for writing
+    const structureObj = {};
+    assessmentList.forEach((a, idx) => {
+      structureObj[`a${idx + 1}`] = { name: a.name, max: Number(a.max || 0), score: 0 };
+    });
+
+    const ensureForStudent = async (s) => {
+      try {
+        const res = await axios.get(`${RTDB_BASE}/ClassMarks/${selectedCourseId}/${s.id}/${activeSemester}.json`);
+        const existing = res.data || {};
+        if (!existing || !existing.assessments || Object.keys(existing.assessments).length === 0) {
+          await axios.put(`${RTDB_BASE}/ClassMarks/${selectedCourseId}/${s.id}/${activeSemester}.json`, {
+            teacherName: teacher?.name || "",
+            assessments: structureObj,
+          });
+          setStudentMarks((prev) => ({ ...prev, [s.id]: structureObj }));
+        }
+      } catch (err) {
+        console.error("Failed ensuring marks for student", s.id, err);
+      }
+    };
+
+    filteredStudents.forEach((s) => {
+      // only ensure for students missing entries in current state
+      if (!studentMarks[s.id] || Object.keys(studentMarks[s.id] || {}).length === 0) {
+        ensureForStudent(s);
+      }
+    });
+  }, [students, selectedCourseId, assessmentList, activeSemester, courses, studentMarks, teacher]);
 
   // Reset assessments on course change
   useEffect(() => {
@@ -530,11 +571,65 @@ export default function MarksPage() {
   }, []);
 
   // --- Export / Print helpers ---
+  const capitalize = (str) =>
+    String(str || "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+
+  const splitName = (full) => {
+    const parts = String(full || "").trim().split(/\s+/);
+    return {
+      name: capitalize(parts[0] || ""),
+      father: capitalize(parts.slice(1).join(" ") || ""),
+    };
+  };
+
   const buildTableRows = () => {
-    const headers = ["Student", ...assessmentList.map(a => `${a.name} (${a.max})`), "Total", "Grade"];
-    const rows = [headers];
-    Object.entries(studentMarks).forEach(([sid, marks]) => {
+    // categorize assessments into groups (Test, Assignment, Mid, or raw name)
+    const categorize = (name) => {
+      if (!name) return "Other";
+      const n = name.toLowerCase();
+      if (n.includes("test")) return "Test";
+      if (n.includes("assign") || n.includes("assig")) return "Assignment";
+      if (n.includes("mid")) return "Mid";
+      return name;
+    };
+
+    const groups = [];
+    assessmentList.forEach((a) => {
+      const cat = categorize(a.name);
+      let g = groups.find((x) => x.key === cat);
+      if (!g) {
+        g = { key: cat, items: [] };
+        groups.push(g);
+      }
+      g.items.push(a);
+    });
+
+    // Build three header rows: totals above, category names (spanning), then individual assessment headers
+    const totalsHeader = ["No.", "Name", "Father"];
+    const categoryHeader = ["No.", "Name", "Father"];
+    const nameHeader = ["No.", "Name", "Father"];
+
+    groups.forEach((g) => {
+      const totalMax = g.items.reduce((s, it) => s + Number(it.max || 0), 0);
+      // push total for first column in the group and blanks for rest (for CSV/Excel representation)
+      totalsHeader.push(...g.items.map((it, i) => (i === 0 ? `Total ${totalMax}` : "")));
+      categoryHeader.push(...g.items.map((it, i) => (i === 0 ? g.key : "")));
+      nameHeader.push(...g.items.map((it) => `${it.name} (${it.max})`));
+    });
+
+    nameHeader.push("Total", "Grade");
+    totalsHeader.push("", "");
+    categoryHeader.push("", "");
+
+    const rows = [totalsHeader, categoryHeader, nameHeader];
+
+    Object.entries(studentMarks).forEach(([sid, marks], idx) => {
       const student = students.find((s) => s.id === sid) || { name: sid };
+      const { name: namePart, father: fatherPart } = splitName(student.name || "");
       const scores = Object.values(marks).map((m) => (m.score != null ? m.score : ""));
       const total = Object.values(marks).reduce((s, a) => s + (a.score || 0), 0);
       const grade =
@@ -547,63 +642,97 @@ export default function MarksPage() {
           : total >= 60
           ? "D"
           : "F";
-      rows.push([student.name, ...scores, total, grade]);
+      rows.push([idx + 1, (namePart || "").toUpperCase(), (fatherPart || "").toUpperCase(), ...scores, total, grade]);
     });
     return rows;
   };
 
-  const downloadCSV = (filename = "marks.csv") => {
-    const rows = buildTableRows();
-    const csv = rows
-      .map((r) =>
-        r
-          .map((cell) => {
-            if (cell == null) return "";
-            const cellStr = String(cell);
-            return cellStr.includes(",") || cellStr.includes("\n") ? `"${cellStr.replace(/"/g, '""')}"` : cellStr;
-          })
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
-  const downloadExcel = (filename = "marks.xls") => {
-    const rows = buildTableRows();
-    let html = "<table border=1>";
-    rows.forEach((r) => {
-      html += "<tr>" + r.map((c) => `<td>${String(c ?? "").replace(/</g, "&lt;")}</td>`).join("") + "</tr>";
+const downloadExcel = async () => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Marks");
+
+  sheet.addRow(["Semester", "Semester 2"]);
+  sheet.addRow(["Grade", "7"]);
+  sheet.addRow(["Subject", "English"]);
+  sheet.addRow([]);
+
+  sheet.addRow([
+    "No",
+    "Name",
+    "Father",
+    "Total 10",
+    "Total 15",
+    "Total 25",
+    "Total 50",
+    "Total"
+  ]);
+
+  sheet.addRow([
+    "",
+    "",
+    "",
+    "Test",
+    "Assignment",
+    "Mid Exam",
+    "Final Exam",
+    ""
+  ]);
+
+  Object.entries(studentMarks).forEach(([sid, marks], i) => {
+    const student = students.find(s => s.id === sid) || {};
+    const names = (student.name || "").split(" ");
+
+    const scores = Object.values(marks).map(m => Number(m.score || 0));
+    const total = scores.reduce((a, b) => a + b, 0);
+
+    sheet.addRow([
+      i + 1,
+      names[0]?.toUpperCase(),
+      names.slice(1).join(" ").toUpperCase(),
+      scores[0] || 0,
+      scores[1] || 0,
+      scores[2] || 0,
+      scores[3] || 0,
+      total,
+    ]);
+  });
+
+  // 👉 APPLY REAL BORDERS
+  sheet.eachRow(row => {
+    row.eachCell(cell => {
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
     });
-    html += "</table>";
-    const uri = "data:application/vnd.ms-excel;charset=utf-8," + encodeURIComponent(html);
-    const link = document.createElement("a");
-    link.href = uri;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  });
 
-  const handlePrint = () => {
-    const wrapper = marksWrapperRef.current;
-    if (!wrapper) return window.print();
-    const html = `<!doctype html><html><head><title>Marks</title><meta charset="utf-8"><style>table{border-collapse:collapse;}td,th{padding:8px;border:1px solid #ccc;}</style></head><body>${wrapper.innerHTML}</body></html>`;
-    const w = window.open("", "_blank");
-    if (!w) return alert("Pop-up blocked. Please allow popups to print.");
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(() => { w.print(); }, 200);
-  };
+  // Column widths
+  sheet.columns = [
+    { width: 5 },
+    { width: 18 },
+    { width: 18 },
+    { width: 10 },
+    { width: 14 },
+    { width: 12 },
+    { width: 14 },
+    { width: 10 },
+  ];
 
+  const buffer = await workbook.xlsx.writeBuffer();
+  saveAs(new Blob([buffer]), "Marks.xlsx");
+};
+
+
+
+
+
+
+  
   return (
     <div className="dashboard-page">
       {/* Top Navbar */}
@@ -1135,7 +1264,7 @@ export default function MarksPage() {
                   className="marks-table"
                   style={{
                     borderCollapse: "separate",
-                    borderSpacing: "0 12px",
+                    borderSpacing: "0 ",
                     fontSize: "15px",
                     minWidth: 0,
                     width: "100%",
@@ -1144,75 +1273,24 @@ export default function MarksPage() {
                   }}
                 >
                   <thead>
-                    <tr
-                      style={{
-                        background: "linear-gradient(135deg, #4b6cb7, #1e3a8a)",
-                        color: "#fff",
-                        borderRadius: "16px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        fontWeight: "600",
-                        fontSize: "14px",
-                      }}
-                    >
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          textAlign: "left",
-                          borderRadius: "16px 0 0 16px",
-                          background: "rgba(255,255,255,0.1)",
-                        }}
-                      >
-                        <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <FaUsers /> Student
-                        </span>
-                      </th>
+                   
+                    
+
+                    {/* Third row: individual assessment headers */}
+                    <tr style={{ background: "linear-gradient(135deg, #4b6cb7, #1e3a8a)", color: "#fff", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "600", fontSize: "14px" }}>
+                      <th style={{ padding: "16px 12px", textAlign: "left", borderRadius: "0 0 0 16px", background: "rgba(255,255,255,0.1)" }}>NO.</th>
+                      <th style={{ padding: "16px 20px", textAlign: "left", background: "rgba(255,255,255,0.1)" }}>Name</th>
+                      <th style={{ padding: "6px 8px", background: "rgba(255,255,255,0.05)", textAlign: "left" }}>Father</th>
                       {assessmentList.map((a, i) => (
-                        <th
-                          key={i}
-                          style={{
-                            padding: "16px 18px",
-                            background: "rgba(255,255,255,0.05)",
-                            textAlign: "center",
-                            transition: "0.3s all",
-                          }}
-                        >
-                          {a.name} ({a.max})
-                        </th>
+                        <th key={`head-${i}`} style={{ padding: "16px 18px", background: "rgba(255,255,255,0.05)", textAlign: "center" }}>{a.name}{` (${a.max})`}</th>
                       ))}
-                      <th
-                        style={{
-                          padding: "16px 18px",
-                          background: "rgba(255,255,255,0.05)",
-                          textAlign: "center",
-                        }}
-                      >
-                        Total
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 18px",
-                          background: "rgba(255,255,255,0.05)",
-                          textAlign: "center",
-                        }}
-                      >
-                        Grade
-                      </th>
-                      <th
-                        style={{
-                          padding: "16px 20px",
-                          borderRadius: "0 16px 16px 0",
-                          background: "rgba(255,255,255,0.1)",
-                          textAlign: "center",
-                        }}
-                      >
-                        <FaSave /> Save
-                      </th>
+                      <th style={{ padding: "16px 18px", background: "rgba(255,255,255,0.05)", textAlign: "center" }}>Total</th>
+                      <th style={{ padding: "16px 18px", background: "rgba(255,255,255,0.05)", textAlign: "center" }}>Grade</th>
+                      <th style={{ padding: "16px 20px", borderRadius: "0 0 16px 0", background: "rgba(255,255,255,0.1)", textAlign: "center" }}><FaSave /> Save</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(studentMarks).map(([sid, marks]) => {
+                    {Object.entries(studentMarks).map(([sid, marks], idx) => {
                       const total = Object.values(marks).reduce((s, a) => s + (a.score || 0), 0);
                       const grade =
                         total >= 90
@@ -1224,7 +1302,8 @@ export default function MarksPage() {
                           : total >= 60
                           ? "D"
                           : "F";
-                      const student = students.find((s) => s.id === sid);
+                      const student = students.find((s) => s.id === sid) || {};
+                      const { name: namePart, father: fatherPart } = splitName(student.name || "");
                       const gradeColor =
                         grade === "A"
                           ? "#16a34a"
@@ -1248,6 +1327,7 @@ export default function MarksPage() {
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#e0e7ff")}
                           onMouseLeave={(e) => (e.currentTarget.style.background = "#f9fafb")}
                         >
+                          <td style={{ padding: "12px", fontWeight: "700", width: 64 }}>{idx + 1}</td>
                           <td
                             style={{
                               padding: "12px",
@@ -1272,8 +1352,9 @@ export default function MarksPage() {
                                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                               />
                             </div>
-                            {student?.name}
+                            {(namePart || student?.name || "").toUpperCase()}
                           </td>
+                          <td style={{ padding: "12px", fontWeight: "600" }}>{(fatherPart || "").toUpperCase()}</td>
                           {Object.entries(marks).map(([k, a]) => (
                             <td key={k} style={{ padding: "12px" }}>
                               <input

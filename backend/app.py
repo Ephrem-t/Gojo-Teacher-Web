@@ -678,6 +678,46 @@ def get_posts():
     return jsonify(result)
 
 
+# ===================== SAVE WEEK LESSON PLAN =====================
+@app.route('/api/lesson-plans/save-week', methods=['POST'])
+def save_week_lesson_plan():
+    try:
+        data = request.get_json() or {}
+        teacher_id = data.get('teacherId')
+        course_id = data.get('courseId')
+        academic_year = data.get('academicYear') or 'default'
+        week = data.get('week')
+        week_topic = data.get('weekTopic')
+        days = data.get('days') or []
+
+        if not teacher_id or week is None:
+            return jsonify({'success': False, 'message': 'teacherId and week are required'}), 400
+
+        # Normalize week key (string)
+        week_key = f"week_{str(week)}"
+
+        lesson_ref = db.reference('LessonPlans').child(teacher_id).child(academic_year).child(week_key)
+
+        # Structure to save
+        obj = {
+            'teacherId': teacher_id,
+            'courseId': course_id,
+            'academicYear': academic_year,
+            'week': week,
+            'weekTopic': week_topic,
+            'days': days,
+            'updatedAt': datetime.utcnow().isoformat()
+        }
+
+        lesson_ref.set(obj)
+
+        return jsonify({'success': True, 'message': 'Week plan saved', 'data': obj}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @app.route("/api/mark_teacher_post_seen", methods=["POST"])
 def mark_teacher_post_seen():
     try:
