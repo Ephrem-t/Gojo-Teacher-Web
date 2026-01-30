@@ -678,44 +678,6 @@ def get_posts():
     return jsonify(result)
 
 
-# ===================== SAVE WEEK LESSON PLAN =====================
-@app.route('/api/lesson-plans/save-week', methods=['POST'])
-def save_week_lesson_plan():
-    try:
-        data = request.get_json() or {}
-        teacher_id = data.get('teacherId')
-        course_id = data.get('courseId')
-        academic_year = data.get('academicYear') or 'default'
-        week = data.get('week')
-        week_topic = data.get('weekTopic')
-        days = data.get('days') or []
-
-        if not teacher_id or week is None:
-            return jsonify({'success': False, 'message': 'teacherId and week are required'}), 400
-
-        # Normalize week key (string)
-        week_key = f"week_{str(week)}"
-
-        lesson_ref = db.reference('LessonPlans').child(teacher_id).child(academic_year).child(week_key)
-
-        # Structure to save
-        obj = {
-            'teacherId': teacher_id,
-            'courseId': course_id,
-            'academicYear': academic_year,
-            'week': week,
-            'weekTopic': week_topic,
-            'days': days,
-            'updatedAt': datetime.utcnow().isoformat()
-        }
-
-        lesson_ref.set(obj)
-
-        return jsonify({'success': True, 'message': 'Week plan saved', 'data': obj}), 200
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @app.route("/api/mark_teacher_post_seen", methods=["POST"])
@@ -876,6 +838,107 @@ def like_post():
 
     return jsonify({"success": True, "likeCount": len(likes), "liked": teacherId in likes})
 
+
+
+# ===================== SAVE WEEK LESSON PLAN =====================
+@app.route('/api/lesson-plans/save-week', methods=['POST'])
+def save_week_lesson_plan():
+    try:
+        data = request.get_json() or {}
+        teacher_id = data.get('teacherId')
+        course_id = data.get('courseId')
+        academic_year = data.get('academicYear') or 'default'
+        week = data.get('week')
+        week_topic = data.get('weekTopic')
+        days = data.get('days') or []
+
+        if not teacher_id or week is None:
+            return jsonify({'success': False, 'message': 'teacherId and week are required'}), 400
+
+        if not course_id:
+            return jsonify({'success': False, 'message': 'courseId is required'}), 400
+
+        # Normalize week key (string)
+        week_key = f"week_{str(week)}"
+
+        # Save per-course under courses/<course_id>/<week_key>
+        lesson_ref = db.reference('LessonPlans').child(teacher_id).child(academic_year).child('courses').child(course_id).child(week_key)
+
+        # Structure to save
+        obj = {
+            'teacherId': teacher_id,
+            'courseId': course_id,
+            'academicYear': academic_year,
+            'week': week,
+            'weekTopic': week_topic,
+            'days': days,
+            'updatedAt': datetime.utcnow().isoformat()
+        }
+
+        lesson_ref.set(obj)
+
+        return jsonify({'success': True, 'message': 'Week plan saved', 'data': obj}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+
+@app.route('/api/lesson-plans/save-annual', methods=['POST'])
+def save_annual_lesson_plan():
+    try:
+        data = request.get_json() or {}
+        teacher_id = data.get('teacherId')
+        course_id = data.get('courseId')
+        academic_year = data.get('academicYear') or 'default'
+        annual_rows = data.get('annualRows', [])
+
+        if not teacher_id:
+            return jsonify({'success': False, 'message': 'teacherId is required'}), 400
+
+        if not course_id:
+            return jsonify({'success': False, 'message': 'courseId is required'}), 400
+
+        # Save per-course annual under courses/<course_id>/annual
+        lesson_ref = db.reference('LessonPlans').child(teacher_id).child(academic_year).child('courses').child(course_id)
+
+        obj = {
+            'teacherId': teacher_id,
+            'courseId': course_id,
+            'academicYear': academic_year,
+            'annualRows': annual_rows,
+            'updatedAt': datetime.utcnow().isoformat()
+        }
+
+        lesson_ref.child('annual').set(obj)
+
+        return jsonify({'success': True, 'message': 'Annual plan saved', 'data': obj}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/lesson-plans/<teacher_id>', methods=['GET'])
+def get_lesson_plans(teacher_id):
+    try:
+        academic_year = request.args.get('academicYear') or '2025/26'
+
+        lesson_ref = db.reference('LessonPlans').child(teacher_id).child(academic_year)
+
+        course_id = request.args.get('courseId')
+        if course_id:
+            course_node = lesson_ref.child('courses').child(course_id).get() or {}
+            return jsonify({'success': True, 'data': course_node}), 200
+
+        # If no courseId provided, return entire academic year tree
+        data = lesson_ref.get() or {}
+        return jsonify({'success': True, 'data': data}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 
