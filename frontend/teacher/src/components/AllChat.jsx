@@ -138,13 +138,7 @@ export default function TeacherAllChat() {
   }, [incomingContact, incomingChatId, incomingTab]);
 
   // When lists load and no explicit selectedChatUser, auto-pick first item for tab
-  useEffect(() => {
-    if (!selectedChatUser) {
-      if (selectedTab === "student" && students.length) setSelectedChatUser(students[0]);
-      if (selectedTab === "parent" && parents.length) setSelectedChatUser(parents[0]);
-      if (selectedTab === "admin" && admins.length) setSelectedChatUser(admins[0]);
-    }
-  }, [selectedTab, students, parents, admins, selectedChatUser]);
+  // Remove auto-select: user must manually choose who to chat with
 
   // If navigation gave a user and lists are ready, find the matching entry and select it
   useEffect(() => {
@@ -385,18 +379,39 @@ export default function TeacherAllChat() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#eef2f7", fontFamily: "sans-serif" }}>
-      {/* ===== SIDEBAR ===== */}
-      <div style={{ display: 'flex', alignItems: 'stretch' }}>
-        <div style={{
-          width: sidebarOpen ? (isMobile ? 220 : 280) : 0,
-          background: "#fff",
-          padding: sidebarOpen ? 16 : 0,
-          boxShadow: sidebarOpen ? "2px 0 10px rgba(0,0,0,0.1)" : 'none',
-          display: sidebarOpen ? 'flex' : 'none',
-          flexDirection: "column",
-          transition: 'width 180ms ease'
-        }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#eef2f7', fontFamily: 'sans-serif', position: 'relative' }}>
+      {/* ===== SIDEBAR / USER LIST ===== */}
+      <div
+        style={{
+          display:
+            isMobile && !selectedChatUser
+              ? 'flex'
+              : isMobile && selectedChatUser
+              ? 'none'
+              : 'flex',
+          alignItems: 'stretch',
+          position: isMobile && !selectedChatUser ? 'fixed' : 'static',
+          top: 0,
+          left: 0,
+          width: isMobile && !selectedChatUser ? '100vw' : undefined,
+          height: isMobile && !selectedChatUser ? '100vh' : undefined,
+          background: isMobile && !selectedChatUser ? '#fff' : undefined,
+          zIndex: isMobile && !selectedChatUser ? 100 : undefined,
+        }}
+      >
+        <div
+          style={{
+            width: isMobile && !selectedChatUser ? '100vw' : sidebarOpen ? (isMobile ? 220 : 280) : 0,
+            height: isMobile && !selectedChatUser ? '100vh' : 'auto',
+            background: '#fff',
+            padding: sidebarOpen || (isMobile && !selectedChatUser) ? 16 : 0,
+            boxShadow: sidebarOpen || (isMobile && !selectedChatUser) ? '2px 0 10px rgba(0,0,0,0.1)' : 'none',
+            display: sidebarOpen || (isMobile && !selectedChatUser) ? 'flex' : 'none',
+            flexDirection: 'column',
+            transition: 'width 180ms ease',
+            overflowY: isMobile && !selectedChatUser ? 'auto' : 'visible',
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <button onClick={() => navigate(-1)} style={{ border: "none", background: "none", padding: 4, cursor: "pointer" }}>
               <FaArrowLeft size={18} />
@@ -433,18 +448,20 @@ export default function TeacherAllChat() {
                 onClick={() => {
                   setSelectedChatUser(u);
                   setCurrentChatKey(null); // compute chat key automatically for selected pair
+                  if (isMobile) setSidebarOpen(false);
                 }}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   gap: 10,
-                  padding: 10,
+                  padding: isMobile ? 18 : 10,
                   borderRadius: 14,
-                  cursor: "pointer",
+                  cursor: 'pointer',
                   marginBottom: 8,
-                  background: selectedChatUser?.userId === u.userId ? "#dbeafe" : "#f9fafb",
-                  boxShadow: selectedChatUser?.userId === u.userId ? "0 2px 10px rgba(0,0,0,0.1)" : "none",
+                  background: selectedChatUser?.userId === u.userId ? '#dbeafe' : '#f9fafb',
+                  boxShadow: selectedChatUser?.userId === u.userId ? '0 2px 10px rgba(0,0,0,0.1)' : 'none',
+                  fontSize: isMobile ? 18 : 15,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -509,6 +526,22 @@ export default function TeacherAllChat() {
                 marginBottom: 8,
               }}
             >
+              {isMobile && (
+                <button
+                  onClick={() => setSelectedChatUser(null)}
+                  style={{
+                    border: 'none',
+                    background: 'none',
+                    padding: 4,
+                    marginRight: 8,
+                    cursor: 'pointer',
+                    fontSize: 20,
+                  }}
+                  aria-label="Back to user list"
+                >
+                  <FaArrowLeft size={22} />
+                </button>
+              )}
               <img
                 src={selectedChatUser.profileImage}
                 alt={selectedChatUser.name}

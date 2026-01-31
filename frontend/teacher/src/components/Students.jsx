@@ -1554,6 +1554,8 @@ React.useEffect(() => {
             <Link className="sidebar-btn" to="/schedule" >
               <FaUsers /> Schedule
             </Link>
+             <Link className="sidebar-btn" to="/lesson-plan" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaClipboardCheck /> Lesson Plan</Link>
+      
             
             <button className="sidebar-btn logout-btn" onClick={handleLogout}>
               <FaSignOutAlt /> Logout

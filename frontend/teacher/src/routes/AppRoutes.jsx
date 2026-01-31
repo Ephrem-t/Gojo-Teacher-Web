@@ -11,7 +11,12 @@ import AdminPage from "../components/AdminPage";
 import TeacherNotesPage from "../components/TeacherNotesPage";
 import Parents from "../components/Parents";
 import SettingsPage from "../components/SettingsPage";
+
 import Schedule from "../components/Schedule";
+import Exam from "../components/Exam";
+import LessonPlan from "../components/LessonPlan";
+
+
 // ✅ Chat Pages
 import AllChat from "../components/AllChat";
 
@@ -35,6 +40,9 @@ export default function AppRoutes() {
          <Route path="/settings" element={<SettingsPage />} />
         <Route path="all-chat" element={<AllChat />} />
         <Route path="schedule" element={<Schedule />} />
+        <Route path="exam" element={<Exam />} />
+        <Route path="lesson-plan" element={<LessonPlan />} />
+       
         {/* Chat */}
         {/* Catch-all route for unknown paths (e.g., /index.html) */}
         <Route path="*" element={<Login />} />
