@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "gh-pages": "^6.3.0"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
   }
 }
