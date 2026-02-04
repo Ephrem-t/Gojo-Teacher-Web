@@ -17,6 +17,9 @@ import {
   FaCheck,
   FaPaperPlane,
   FaChevronRight,
+   FaUserCheck,
+  FaCalendarAlt,
+  FaBookOpen
 } from "react-icons/fa";
 import "../styles/global.css";
 
@@ -709,9 +712,9 @@ const mainListWidth = (() => {
             <Link className="sidebar-btn" to="/admins" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaUsers /> Admins</Link>
             <Link className="sidebar-btn" to="/parents"><FaChalkboardTeacher /> Parents</Link>
             <Link className="sidebar-btn" to="/marks"><FaClipboardCheck /> Marks</Link>
-            <Link className="sidebar-btn" to="/attendance"><FaUsers /> Attendance</Link>
-            <Link className="sidebar-btn" to="/schedule"><FaUsers /> Schedule</Link>
-            <Link className="sidebar-btn" to="/lesson-plan"><FaClipboardCheck /> Lesson Plan</Link>
+             <Link className="sidebar-btn" to="/attendance"><FaUserCheck/> Attendance</Link>
+                        <Link className="sidebar-btn" to="/schedule" ><FaCalendarAlt/> Schedule</Link>
+                        <Link className="sidebar-btn" to="/lesson-plan" >< FaBookOpen/> Lesson Plan</Link>
 
             
 

@@ -12,6 +12,9 @@ import {
   FaBell,
   FaChevronLeft,
   FaChevronRight,
+  FaUserCheck,
+  FaCalendarAlt,
+  FaBookOpen
 } from "react-icons/fa";
 import "../styles/global.css";
 
@@ -545,9 +548,9 @@ function Schedule() {
             <Link className="sidebar-btn" to="/admins"><FaUsers/> Admins</Link>
             <Link className="sidebar-btn" to="/parents"><FaChalkboardTeacher/> Parents</Link>
             <Link className="sidebar-btn" to="/marks"><FaClipboardCheck/> Marks</Link>
-            <Link className="sidebar-btn" to="/attendance"><FaUsers/> Attendance</Link>
-            <Link className="sidebar-btn" to="/schedule" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaUsers/> Schedule</Link>
-            <Link className="sidebar-btn" to="/lesson-plan" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaClipboardCheck /> Lesson Plan</Link>
+            <Link className="sidebar-btn" to="/attendance"><FaUserCheck/> Attendance</Link>
+            <Link className="sidebar-btn" to="/schedule" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaCalendarAlt/> Schedule</Link>
+            <Link className="sidebar-btn" to="/lesson-plan" >< FaBookOpen/> Lesson Plan</Link>
             <button className="sidebar-btn logout-btn" onClick={handleLogout}><FaSignOutAlt/> Logout</button>
           </div>
         </div>

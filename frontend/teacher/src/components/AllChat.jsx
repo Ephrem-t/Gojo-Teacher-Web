@@ -4,7 +4,8 @@ import { FaArrowLeft, FaPaperPlane, FaCheck } from "react-icons/fa";
 import { getDatabase, ref, onValue, push, update } from "firebase/database";
 import { db } from "../firebase";
 
-const getChatId = (id1, id2) => [String(id1), String(id2)].sort().join("_");
+// Deterministic chat key: always teacher first, then receiver.
+const getChatId = (teacherUserId, receiverUserId) => `${String(teacherUserId)}_${String(receiverUserId)}`;
 
 /* ================= FIREBASE ================= */
 
@@ -34,7 +35,8 @@ export default function TeacherAllChat() {
 
   const [selectedTab, setSelectedTab] = useState(incomingTab || "student");
   const [selectedChatUser, setSelectedChatUser] = useState(incomingContact || null);
-  const [currentChatKey, setCurrentChatKey] = useState(incomingChatId || null);
+  // Always compute chat key from teacher + selected receiver.
+  const [currentChatKey, setCurrentChatKey] = useState(null);
 
   const [clickedMessageId, setClickedMessageId] = useState(null);
   const [editingMessages, setEditingMessages] = useState({}); // { messageId: true/false }
@@ -128,14 +130,17 @@ export default function TeacherAllChat() {
     if (incomingContact) {
       setSelectedChatUser(incomingContact);
     }
-    if (incomingChatId) {
-      setCurrentChatKey(incomingChatId);
-    }
     if (incomingTab) {
       setSelectedTab(incomingTab);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incomingContact, incomingChatId, incomingTab]);
+    // If a chatId was passed, only accept it if it matches deterministic format.
+    if (teacherUserId && incomingContact?.userId) {
+      const expected = getChatId(teacherUserId, incomingContact.userId);
+      setCurrentChatKey(incomingChatId && incomingChatId === expected ? incomingChatId : expected);
+    } else {
+      setCurrentChatKey(null);
+    }
+  }, [incomingContact, incomingChatId, incomingTab, teacherUserId]);
 
   // When lists load and no explicit selectedChatUser, auto-pick first item for tab
   // Remove auto-select: user must manually choose who to chat with

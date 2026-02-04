@@ -12,6 +12,9 @@ import {
   FaSearch,
   FaChalkboardTeacher,
   FaFacebookMessenger,
+   FaUserCheck,
+  FaCalendarAlt,
+  FaBookOpen
 } from "react-icons/fa";
 import "../styles/global.css";
 
@@ -496,8 +499,10 @@ function saveSeenPost(teacherId, postId) {
             <Link className="sidebar-btn" to="/admins"><FaUsers /> Admins</Link>
             <Link className="sidebar-btn" to="/parents"><FaChalkboardTeacher /> Parents</Link>
             <Link className="sidebar-btn" to="/marks"><FaClipboardCheck /> Marks</Link>
-            <Link className="sidebar-btn" to="/attendance"><FaUsers /> Attendance</Link>
-            <Link className="sidebar-btn" to="/schedule"><FaUsers /> Schedule</Link>
+           <Link className="sidebar-btn" to="/attendance" ><FaUserCheck/> Attendance</Link>
+                                               <Link className="sidebar-btn" to="/schedule" ><FaCalendarAlt/> Schedule</Link>
+                                               <Link className="sidebar-btn" to="/lesson-plan" >< FaBookOpen/> Lesson Plan</Link>
+                
             <button className="sidebar-btn logout-btn" onClick={handleLogout}><FaSignOutAlt /> Logout</button>
           </div>
         </div>

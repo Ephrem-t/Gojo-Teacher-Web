@@ -18,6 +18,9 @@ import {
   FaTimesCircle,
   FaFacebookMessenger,
   FaCommentDots,
+   FaUserCheck,
+  FaCalendarAlt,
+  FaBookOpen,
   FaPaperPlane,
 } from "react-icons/fa";
 import "../styles/global.css";
@@ -33,8 +36,12 @@ import {
 } from "firebase/database";
 import { db } from "../firebase";
 
-const getChatId = (id1, id2) => {
-  return [id1, id2].sort().join("_");
+// Chat thread key for teacher<->student must be: teacherUserId_studentUserId
+// (teacher first, no sorting) so the DB path is predictable.
+const getChatId = (teacherUserId, studentUserId) => {
+  const t = String(teacherUserId || "").trim();
+  const s = String(studentUserId || "").trim();
+  return `${t}_${s}`;
 };
 
 
@@ -1548,14 +1555,10 @@ React.useEffect(() => {
             <Link className="sidebar-btn" to="/marks">
               <FaClipboardCheck /> Marks
             </Link>
-            <Link className="sidebar-btn" to="/attendance">
-              <FaUsers /> Attendance
-            </Link>
-            <Link className="sidebar-btn" to="/schedule" >
-              <FaUsers /> Schedule
-            </Link>
-             <Link className="sidebar-btn" to="/lesson-plan" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaClipboardCheck /> Lesson Plan</Link>
-      
+           <Link className="sidebar-btn" to="/attendance" ><FaUserCheck/> Attendance</Link>
+                                               <Link className="sidebar-btn" to="/schedule" ><FaCalendarAlt/> Schedule</Link>
+                                               <Link className="sidebar-btn" to="/lesson-plan">< FaBookOpen/> Lesson Plan</Link>
+                
             
             <button className="sidebar-btn logout-btn" onClick={handleLogout}>
               <FaSignOutAlt /> Logout
@@ -2560,9 +2563,11 @@ marginRight: 0,
                       <button
                         onClick={() => {
                           setChatOpen(false); // properly close popup
+                          const chatId = getChatId(teacherUserId, selectedStudent.userId);
                           navigate("/all-chat", {
                             state: {
                               user: selectedStudent, // user to auto-select
+                              chatId, // open the exact chat thread
                               tab: "student", // tab type
                             },
                           });

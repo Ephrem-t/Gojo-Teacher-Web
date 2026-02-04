@@ -37,6 +37,9 @@ import {
   FaCommentDots,
   FaCheck,
   FaChevronRight,
+   FaUserCheck,
+  FaCalendarAlt,
+  FaBookOpen
 } from "react-icons/fa";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -54,7 +57,13 @@ import "../styles/global.css";
  * - Minor polish to layout so it adapts to narrow viewports.
  */
 
-const getChatId = (id1, id2) => [id1, id2].sort().join("_");
+// Chat thread key for teacher<->parent must be: teacherUserId_parentUserId
+// (teacher first, no sorting) so the DB path is predictable.
+const getChatId = (teacherUserId, parentUserId) => {
+  const t = String(teacherUserId || "").trim();
+  const p = String(parentUserId || "").trim();
+  return `${t}_${p}`;
+};
 const API_BASE = "https://gojo-teacher-web.onrender.com/api";
 const RTDB_BASE = "https://ethiostore-17d9f-default-rtdb.firebaseio.com";
 
@@ -695,9 +704,10 @@ const [children, setChildren] = useState([]);
             <Link className="sidebar-btn" to="/admins"><FaUsers /> Admins</Link>
             <Link className="sidebar-btn" to="/parents" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaChalkboardTeacher /> Parents</Link>
             <Link className="sidebar-btn" to="/marks"><FaClipboardCheck /> Marks</Link>
-            <Link className="sidebar-btn" to="/attendance"><FaUsers /> Attendance</Link>
-            <Link className="sidebar-btn" to="/schedule"><FaUsers /> Schedule</Link>
-            <Link className="sidebar-btn" to="/lesson-plan" style={{ backgroundColor: "#4b6cb7", color: "#fff" }}><FaClipboardCheck /> Lesson Plan</Link>
+            <Link className="sidebar-btn" to="/attendance" ><FaUserCheck/> Attendance</Link>
+                                                <Link className="sidebar-btn" to="/schedule" ><FaCalendarAlt/> Schedule</Link>
+                                                <Link className="sidebar-btn" to="/lesson-plan" >< FaBookOpen/> Lesson Plan</Link>
+                 
             
             <button className="sidebar-btn logout-btn" onClick={handleLogout}><FaSignOutAlt /> Logout</button>
           </div>
@@ -1098,9 +1108,11 @@ const [children, setChildren] = useState([]);
               <button
   onClick={() => {
     setChatOpen(false); // properly close popup
+    const chatId = getChatId(teacherId, selectedParent.userId);
     navigate("/all-chat", {
       state: {
         user: selectedParent, // user to auto-select
+        chatId,               // open the exact chat thread
         tab: "parent",        // tab type
       },
     });
