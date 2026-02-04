@@ -6,11 +6,28 @@ import { Link, useNavigate } from "react-router-dom";
 import "../styles/global.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE || '/api';
+const RTDB_BASE = 'https://ethiostore-17d9f-default-rtdb.firebaseio.com';
+
+const ALL_MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 
 
 function TeacherNotesPage() {
   const [teacher, setTeacher] = useState(null); // single state for teacher
+  const [teacherKey, setTeacherKey] = useState(null); // Teachers node key (teacherId)
   const [courses, setCourses] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [noteText, setNoteText] = useState("");
@@ -23,7 +40,7 @@ const [showNotifications, setShowNotifications] = useState(false);
 const [highlightedPostId, setHighlightedPostId] = useState(null);
 const [selectedWeek, setSelectedWeek] = useState(null);
 const [weekTopic, setWeekTopic] = useState("");
-const emptyDay = () => ({ dayName: "", topic: "", method: "", aids: "", assessment: "" });
+const emptyDay = () => ({ date: "", dayName: "", topic: "", method: "", aids: "", assessment: "" });
 const [days, setDays] = useState([]); // allow teacher to add days dynamically
   const [expandedWeeks, setExpandedWeeks] = useState([]); // indices of expanded week rows
 const [annualRows, setAnnualRows] = useState([
@@ -39,11 +56,31 @@ const [annualRows, setAnnualRows] = useState([
   },
 ]);
   const [dailyPlans, setDailyPlans] = useState([]);
+  const [dbDailyPlans, setDbDailyPlans] = useState([]);
   const [submittedKeys, setSubmittedKeys] = useState([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
   const [sidebarTab, setSidebarTab] = useState('daily'); // 'daily' | 'weekly' | 'monthly'
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarWeekIndex, setSidebarWeekIndex] = useState(0);
   const selectedCourse = courses.find(c => c.id === selectedCourseId) || null;
+
+  const fetchedSidebarWeekDetailsRef = useRef(new Set());
+
+  // For submissions/status keys we must use the Teachers node key (teacherId), NOT the userId.
+  const teacherSubmissionId = React.useMemo(() => {
+    const t = teacherKey || teacher?.teacherId || teacher?.teacherKey || null;
+    return t ? String(t).trim() : null;
+  }, [teacherKey, teacher?.teacherId, teacher?.teacherKey]);
+
+  // helper: ISO week number for a Date (used to progress week pointer)
+  const getISOWeekNumber = (d) => {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+    return weekNo;
+  };
 
   const dayOrder = {
     sunday: 0,
@@ -55,37 +92,261 @@ const [annualRows, setAnnualRows] = useState([
     saturday: 6,
   };
 
+  const todayISODate = React.useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  const startOfWeekMonday = (date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay();
+    // JS: Sunday=0 ... Saturday=6. We want Monday start.
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d;
+  };
+
+  const weekdayFromISODate = (isoDate) => {
+    if (!isoDate) return "";
+    const d = new Date(`${isoDate}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString('en-US', { weekday: 'long' });
+  };
+
+  // Lightweight normalizer (defined early so sidebar effects can use it)
+  const normalizeWeekDaysLite = (input) => {
+    if (!input) return [];
+    if (Array.isArray(input)) {
+      return input.map((d) => ({
+        date: d.date || d.isoDate || d.dayDate || d.day_date || "",
+        dayName: d.dayName || d.name || d.day || d.label || "",
+        topic: d.topic || d.subject || d.title || "",
+        method: d.method || d.methods || "",
+        aids: d.aids || d.material || d.materials || d.aid || "",
+        assessment: d.assessment || d.assess || d.evaluation || "",
+      }));
+    }
+    if (typeof input === 'object') {
+      return Object.keys(input).map((key) => {
+        const val = input[key] || {};
+        if (typeof val === 'string') return { date: '', dayName: key, topic: val, method: '', aids: '', assessment: '' };
+        return {
+          date: val.date || val.isoDate || val.dayDate || val.day_date || "",
+          dayName: val.dayName || val.name || key,
+          topic: val.topic || val.subject || val.title || '',
+          method: val.method || val.methods || '',
+          aids: val.aids || val.material || val.materials || '',
+          assessment: val.assessment || val.assess || '',
+        };
+      });
+    }
+    return [];
+  };
+
+  const activeSidebarWeekIndex = React.useMemo(() => {
+    if (!Array.isArray(annualRows) || annualRows.length === 0) return 0;
+    const start = startOfWeekMonday(new Date());
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+
+    for (let i = 0; i < annualRows.length; i += 1) {
+      const row = annualRows[i] || {};
+      const weekDays = normalizeWeekDaysLite(row.weekDays || row.days || []);
+      for (const d of weekDays) {
+        const iso = (d?.date || '').toString().slice(0, 10);
+        if (!iso) continue;
+        const dt = new Date(`${iso}T00:00:00`);
+        if (!Number.isNaN(dt.getTime()) && dt >= start && dt < end) return i;
+      }
+    }
+
+    return Math.max(0, Math.min(sidebarWeekIndex, annualRows.length - 1));
+  }, [annualRows, sidebarWeekIndex]);
+
+  // Keep a persistent week pointer so the sidebar doesn't show previous weeks.
+  // The pointer advances when the calendar ISO week changes.
+  useEffect(() => {
+    if (!teacher?.userId || !selectedCourseId) return;
+    if (!Array.isArray(annualRows) || annualRows.length === 0) {
+      setSidebarWeekIndex(0);
+      return;
+    }
+
+    const isoWeek = getISOWeekNumber(new Date());
+    const storageKey = `lpWeekPointer::${teacher.userId}::${selectedCourseId}::2025/26`;
+
+    let stored = null;
+    try {
+      stored = JSON.parse(localStorage.getItem(storageKey));
+    } catch (e) {
+      stored = null;
+    }
+
+    let pointerIndex = stored && typeof stored.pointerIndex === 'number' ? stored.pointerIndex : 0;
+    let lastIsoWeek = stored && typeof stored.lastIsoWeek === 'number' ? stored.lastIsoWeek : isoWeek;
+
+    // If ISO week moved forward, advance pointer by delta weeks
+    if (isoWeek !== lastIsoWeek) {
+      const delta = isoWeek - lastIsoWeek;
+      if (delta > 0) pointerIndex += delta;
+      else {
+        // year/week wrap or clock change: reset pointer
+        pointerIndex = 0;
+      }
+      lastIsoWeek = isoWeek;
+    }
+
+    const maxIndex = Math.max(0, annualRows.length - 1);
+    pointerIndex = Math.max(0, Math.min(pointerIndex, maxIndex));
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ pointerIndex, lastIsoWeek }));
+    } catch (e) {
+      // ignore storage failures
+    }
+
+    setSidebarWeekIndex(pointerIndex);
+  }, [teacher?.userId, selectedCourseId, annualRows]);
+
   useEffect(() => {
     if (!teacher) return setDailyPlans([]);
+
+    // Only compute today's plans from the ACTIVE week in the sidebar
+    const activeRow = Array.isArray(annualRows) && annualRows.length
+      ? annualRows[Math.max(0, Math.min(activeSidebarWeekIndex, annualRows.length - 1))]
+      : null;
+
+    if (!activeRow) {
+      setDailyPlans([]);
+      return;
+    }
 
     const todayIndex = new Date().getDay();
     const plans = [];
 
-    annualRows.forEach((r, ri) => {
-      const weekDays = Array.isArray(r.weekDays) ? r.weekDays : (Array.isArray(r.days) ? r.days : []);
-      weekDays.forEach((d, di) => {
-        const dayName = (d.dayName || d.name || '').toString().trim();
-        const key = `${teacher.userId}::${selectedCourseId || 'nocourse'}::${r.week || ri}::${dayName || di}`;
-        const submitted = submittedKeys.includes(key);
-        const lname = (dayName || '').toLowerCase();
-        const scheduledIndex = lname && dayOrder.hasOwnProperty(lname) ? dayOrder[lname] : null;
-        const status = submitted ? 'submitted' : (scheduledIndex !== null && scheduledIndex < todayIndex ? 'missed' : 'pending');
-        plans.push({ key, dayName: dayName || `Day ${di+1}`, topic: d.topic || r.topic || '', week: r.week, status, scheduledIndex });
-      });
+    const ri = Math.max(0, Math.min(activeSidebarWeekIndex, annualRows.length - 1));
+    const r = activeRow;
+    const weekDays = normalizeWeekDaysLite(r.weekDays || r.days || []);
+    weekDays.forEach((d, di) => {
+      const iso = (d.date || '').toString().slice(0, 10);
+      const derivedName = iso ? weekdayFromISODate(iso) : '';
+      const dayName = (d.dayName || d.name || derivedName || '').toString().trim();
+      const key = `${teacherSubmissionId || 'anon'}::${selectedCourseId || 'nocourse'}::${r.week || ri}::${dayName || di}`;
+      const submitted = submittedKeys.includes(key);
+      const lname = (dayName || '').toLowerCase();
+      const scheduledIndex = lname && dayOrder.hasOwnProperty(lname) ? dayOrder[lname] : null;
+      const status = submitted ? 'submitted' : (scheduledIndex !== null && scheduledIndex < todayIndex ? 'missed' : 'pending');
+      const isToday = iso ? (iso === todayISODate) : (scheduledIndex === todayIndex);
+      plans.push({ key, dayName: dayName || `Day ${di+1}`, topic: d.topic || r.topic || '', week: r.week, status, scheduledIndex, date: iso, isToday });
     });
 
-    // show only plans scheduled for today
-    const plansForToday = plans.filter(p => p.scheduledIndex === todayIndex);
+    // show only plans for today (prefer date match when present)
+    const plansForToday = plans.filter(p => p.isToday);
     setDailyPlans(plansForToday);
-  }, [annualRows, selectedCourseId, teacher, submittedKeys]);
+  }, [annualRows, activeSidebarWeekIndex, selectedCourseId, teacher, teacherSubmissionId, submittedKeys, todayISODate]);
+
+  // Fetch teacher daily lesson plans from RTDB LessonPlans node and normalize
+  useEffect(() => {
+    if (!teacher || !teacher.userId) return setDbDailyPlans([]);
+
+    const fetchLessonPlansFromRTDB = async () => {
+      try {
+        const res = await axios.get(`${RTDB_BASE}/LessonPlans.json`);
+        const data = res.data || {};
+
+        // Try direct key by teacher.userId
+        let teacherNode = null;
+        if (data[teacher.userId]) {
+          teacherNode = data[teacher.userId];
+        } else {
+          // Otherwise find entries where teacherId or teacherUserId matches
+          const candidates = Object.values(data).filter((v) => {
+            if (!v) return false;
+            if (v.teacherId && String(v.teacherId) === String(teacher.userId)) return true;
+            if (v.teacherUserId && String(v.teacherUserId) === String(teacher.userId)) return true;
+            return false;
+          });
+          if (candidates.length === 1) teacherNode = candidates[0];
+          else if (candidates.length > 1) {
+            teacherNode = candidates.reduce((acc, cur) => ({ ...acc, ...cur }), {});
+          }
+        }
+
+        const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+        const todayIndex = new Date().getDay();
+
+        // Limit DB daily plans to the ACTIVE sidebar week when possible
+        const activeRow = Array.isArray(annualRows) && annualRows.length
+          ? annualRows[Math.max(0, Math.min(activeSidebarWeekIndex, annualRows.length - 1))]
+          : null;
+        const activeWeekVal = activeRow?.week;
+
+        const normalizeDaysArray = (arr, weekVal) => {
+          if (!Array.isArray(arr)) return [];
+          return arr.map((d, i) => {
+            const dayName = (d.dayName || d.name || d.day || d.label || '').toString();
+            const topic = d.topic || d.subject || d.title || '';
+            const week = weekVal || d.week || null;
+            const scheduledIndex = (dayName && dayOrder.hasOwnProperty(dayName.toLowerCase())) ? dayOrder[dayName.toLowerCase()] : null;
+            const key = `${teacherSubmissionId || 'anon'}::${selectedCourseId || 'nocourse'}::${week || ''}::${dayName || i}`;
+            const submitted = submittedKeys.includes(key);
+            const status = submitted ? 'submitted' : (scheduledIndex !== null && scheduledIndex < todayIndex ? 'missed' : 'pending');
+            return { key, dayName: dayName || `Day ${i+1}`, topic, week, status, scheduledIndex };
+          });
+        };
+
+        let foundDays = [];
+        if (teacherNode) {
+          if (Array.isArray(teacherNode.daily)) {
+            foundDays = normalizeDaysArray(teacherNode.daily, teacherNode.week);
+          } else if (Array.isArray(teacherNode.days)) {
+            foundDays = normalizeDaysArray(teacherNode.days, teacherNode.week);
+          } else if (Array.isArray(teacherNode.weekDays)) {
+            foundDays = normalizeDaysArray(teacherNode.weekDays, teacherNode.week);
+          } else if (teacherNode.weeks && typeof teacherNode.weeks === 'object') {
+            Object.entries(teacherNode.weeks).forEach(([wk, wkObj]) => {
+              const arr = wkObj.weekDays || wkObj.days || wkObj.daily || [];
+              const normalized = normalizeDaysArray(arr, wkObj.week || wk);
+              if (normalized && normalized.length) foundDays = foundDays.concat(normalized);
+            });
+          } else {
+            Object.keys(teacherNode).forEach((k) => {
+              if (k.startsWith('week_') || k.startsWith('week')) {
+                const wkObj = teacherNode[k];
+                const arr = wkObj.weekDays || wkObj.days || wkObj.daily || [];
+                foundDays = foundDays.concat(normalizeDaysArray(arr, wkObj.week || k.replace(/^week_?/, '')));
+              }
+            });
+          }
+        }
+
+        if (!foundDays.length) {
+          Object.values(data).forEach((entry) => {
+            if (!entry) return;
+            const arr = entry.weekDays || entry.days || entry.daily || [];
+            if (Array.isArray(arr) && arr.length) {
+              foundDays = foundDays.concat(normalizeDaysArray(arr, entry.week || entry.weekNumber || null));
+            }
+          });
+        }
+
+        const activeWeekFiltered = activeWeekVal ? foundDays.filter((p) => String(p.week) === String(activeWeekVal)) : foundDays;
+        const todaysPlans = activeWeekFiltered.filter(p => p.scheduledIndex === todayIndex || (p.dayName && p.dayName.toLowerCase() === todayName.toLowerCase()));
+        setDbDailyPlans(todaysPlans);
+      } catch (err) {
+        console.error('Failed to fetch LessonPlans from RTDB', err);
+        setDbDailyPlans([]);
+      }
+    };
+
+    fetchLessonPlansFromRTDB();
+  }, [teacher, selectedCourseId, submittedKeys, annualRows, activeSidebarWeekIndex]);
 
   // Fetch previously submitted daily plans from backend
   // fetchSubmissions is callable so we can re-run after a submit to confirm DB write
   const fetchSubmissions = async () => {
-    if (!teacher || !teacher.userId || !selectedCourseId) return;
+    if (!teacherSubmissionId || !selectedCourseId) return;
     try {
       const res = await axios.get(`${API_BASE}/lesson-plans/submissions`, {
-        params: { teacherId: teacher.userId, courseId: selectedCourseId, academicYear: '2025/26' }
+        params: { teacherId: teacherSubmissionId, courseId: selectedCourseId, academicYear: '2025/26' }
       });
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
         const keys = res.data.data.map(s => s.key).filter(Boolean);
@@ -100,15 +361,15 @@ const [annualRows, setAnnualRows] = useState([
 
   useEffect(() => {
     fetchSubmissions();
-  }, [teacher, selectedCourseId]);
+  }, [teacherSubmissionId, selectedCourseId]);
 
   // Ensure submissions are fetched after lesson plan rows load so sidebar can render statuses
   useEffect(() => {
-    if (!teacher || !teacher.userId || !selectedCourseId) return;
+    if (!teacherSubmissionId || !selectedCourseId) return;
     if (!annualRows || annualRows.length === 0) return;
     // fetch submissions to populate submittedKeys used by sidebar
     fetchSubmissions().catch(() => {});
-  }, [teacher, selectedCourseId, annualRows]);
+  }, [teacherSubmissionId, selectedCourseId, annualRows]);
 
   // Derive current/selected week plan for the sidebar (moved below normalizeWeekDays)
 
@@ -127,8 +388,12 @@ const [annualRows, setAnnualRows] = useState([
     }
 
     try {
+      if (!teacherSubmissionId) {
+        alert('TeacherId not resolved yet. Please refresh and try again.');
+        return;
+      }
       const payload = {
-        teacherId: teacher.userId,
+        teacherId: teacherSubmissionId,
         courseId: selectedCourseId,
         academicYear: '2025/26',
         week: plan.week,
@@ -185,6 +450,7 @@ const postRefs = useRef({});
       return;
     }
     setTeacher(storedTeacher);
+    setTeacherKey(storedTeacher?.teacherId || storedTeacher?.teacherKey || null);
   }, []);
 
   // Fetch saved lesson plans for the selected course once teacher and course are set
@@ -246,6 +512,17 @@ const postRefs = useRef({});
         const teacherKeyEntry = Object.entries(teachersRes.data || {}).find(([key, t]) => t.userId === teacher.userId);
         if (!teacherKeyEntry) return;
         const teacherKey = teacherKeyEntry[0];
+
+        setTeacherKey(teacherKey);
+        if (teacherKey && String(teacher?.teacherId || '') !== String(teacherKey)) {
+          const updatedTeacher = { ...(teacher || {}), teacherId: teacherKey };
+          setTeacher(updatedTeacher);
+          try {
+            localStorage.setItem('teacher', JSON.stringify(updatedTeacher));
+          } catch (e) {
+            // ignore
+          }
+        }
 
         const teacherAssignments = Object.values(assignmentsRes.data || {}).filter(a => a.teacherId === teacherKey);
 
@@ -310,12 +587,16 @@ const handleNotificationClick = (postId, index) => {
 
 const handleSaveWeekPlan = async (rowIndex = null) => {
     try {
+      if (!teacherSubmissionId) {
+        alert('TeacherId not resolved yet. Please refresh and try again.');
+        return;
+      }
       // determine which week to save: prefer explicit rowIndex, else selectedWeek
       const idx = typeof rowIndex === 'number' ? rowIndex : selectedWeek;
       const weekVal = typeof idx === 'number' ? (annualRows[idx]?.week || idx) : idx;
 
       const payload = {
-        teacherId: teacher.userId,
+        teacherId: teacherSubmissionId,
         courseId: selectedCourseId,
         academicYear: "2025/26",
         week: weekVal,
@@ -361,6 +642,8 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
     return rows.map((r) => ({
       month: r.month || "",
       week: r.week || r.weekNumber || "",
+      // Keep raw day structures so the sidebar can render without expanding the week.
+      weekDays: Array.isArray(r.weekDays) ? r.weekDays : (Array.isArray(r.days) ? r.days : r.weekDays || r.days || null),
       days: r.weekDays || r.days || r.daysList || "",
       topic: r.topic || r.weekTopic || "",
       objective: r.objective || r.goals || "",
@@ -376,6 +659,7 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
     // If it's already an array of day objects
     if (Array.isArray(input)) {
       return input.map(d => ({
+        date: d.date || d.isoDate || d.dayDate || d.day_date || "",
         dayName: d.dayName || d.name || d.day || d.label || "",
         topic: d.topic || d.subject || d.title || "",
         method: d.method || d.methods || "",
@@ -389,9 +673,10 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
       return Object.keys(input).map(key => {
         const val = input[key] || {};
         if (typeof val === 'string') {
-          return { dayName: key, topic: val, method: '', aids: '', assessment: '' };
+          return { date: '', dayName: key, topic: val, method: '', aids: '', assessment: '' };
         }
         return {
+          date: val.date || val.isoDate || val.dayDate || val.day_date || "",
           dayName: val.dayName || val.name || key,
           topic: val.topic || val.subject || '',
           method: val.method || val.methods || '',
@@ -404,21 +689,183 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
     return [];
   };
 
-  // Derive current/selected week plan for the sidebar
-  const currentWeekIndex = typeof selectedWeek === 'number' ? selectedWeek : (annualRows && annualRows.length ? 0 : null);
+  // Small UI: Month calendar badge and Week mini-calendar
+  const MonthCalendar = ({ monthRaw }) => {
+    if (!monthRaw) return <div className="muted-italic">No month</div>;
+    // try parse numeric or textual month
+    let display = String(monthRaw);
+    try {
+      const m = parseInt(String(monthRaw).replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(m) && m >= 1 && m <= 12) {
+        const dt = new Date(2026, m - 1, 1);
+        display = dt.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      } else {
+        // try month name
+        const tryDt = new Date(`${monthRaw} 1, 2026`);
+        if (!isNaN(tryDt.getTime())) display = tryDt.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      }
+    } catch (e) {
+      // ignore
+    }
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 8, background: '#fff', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: 12, color: '#6b7280' }}>{display.split(' ')[0]}</div>
+          <div style={{ fontSize: 11, color: '#111827', fontWeight: 700 }}>{display.split(' ')[1] || ''}</div>
+        </div>
+        <div style={{ fontSize: 13 }}>{display}</div>
+      </div>
+    );
+  };
+
+  const WeekCalendar = ({ weekObj }) => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const scheduled = new Set();
+    try {
+      const wds = Array.isArray(weekObj?.weekDays) ? weekObj.weekDays : (Array.isArray(weekObj?.days) ? weekObj.days : []);
+      wds.forEach(d => {
+        const dn = (d.dayName || d.name || '').toString().toLowerCase().slice(0,3);
+        if (dn) scheduled.add(dn);
+      });
+    } catch (e) {}
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {days.map((d) => {
+            const key = d.toLowerCase().slice(0,3);
+            const active = scheduled.has(key);
+            return (
+              <div key={d} style={{ width: 28, height: 28, borderRadius: 6, background: active ? 'linear-gradient(180deg,#dbeafe,#60a5fa)' : '#fff', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: active ? '#1e3a8a' : '#6b7280' }}>{d[0]}</div>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 12, color: '#6b7280' }}>{weekObj?.week ? `Week ${weekObj.week}` : 'Week'}</div>
+      </div>
+    );
+  };
+
+  // Derive ACTIVE week plan for the sidebar (date-driven when possible)
+  const currentWeekIndex = (annualRows && annualRows.length)
+    ? Math.max(0, Math.min(activeSidebarWeekIndex, annualRows.length - 1))
+    : null;
   const currentWeekPlan = (currentWeekIndex !== null && annualRows[currentWeekIndex]) ? annualRows[currentWeekIndex] : null;
   const currentWeekDays = currentWeekPlan ? normalizeWeekDays(currentWeekPlan.weekDays || currentWeekPlan.days || []) : [];
 
-  // Monthly grouping: group annualRows by month
+  // Ensure the ACTIVE sidebar week has its days loaded (so Daily/Weekly renders without expanding)
+  useEffect(() => {
+    if (!teacher?.userId || !selectedCourseId) return;
+    if (currentWeekIndex === null || currentWeekIndex === undefined) return;
+
+    const row = annualRows?.[currentWeekIndex];
+    if (!row) return;
+
+    const existing = normalizeWeekDaysLite(row.weekDays || row.days || []);
+    if (existing.length) return;
+
+    const weekVal = row.week || currentWeekIndex;
+    const fetchKey = `${teacher.userId}::${selectedCourseId}::${weekVal}`;
+    if (fetchedSidebarWeekDetailsRef.current.has(fetchKey)) return;
+    fetchedSidebarWeekDetailsRef.current.add(fetchKey);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/lesson-plans/${teacher.userId}`, {
+          params: { academicYear: '2025/26', courseId: selectedCourseId }
+        });
+
+        if (!res.data || !res.data.success) return;
+        const data = res.data.data || {};
+
+        const weekKey = `week_${weekVal}`;
+        let weekObj = null;
+        if (data[weekKey]) weekObj = data[weekKey];
+        else if (data.annual && Array.isArray(data.annual.annualRows)) {
+          weekObj = data.annual.annualRows.find(r => String(r.week || r.weekNumber) === String(weekVal));
+        } else if (Array.isArray(data.annualRows)) {
+          weekObj = data.annualRows.find(r => String(r.week || r.weekNumber) === String(weekVal));
+        }
+
+        if (!weekObj) return;
+        const normalized = normalizeWeekDays(weekObj.days || weekObj.weekDays || weekObj.week_days || []);
+        if (!normalized.length) return;
+
+        if (cancelled) return;
+        setAnnualRows((prev) => {
+          const next = Array.isArray(prev) ? [...prev] : [];
+          if (!next[currentWeekIndex]) return prev;
+          next[currentWeekIndex] = { ...next[currentWeekIndex], weekDays: normalized };
+          return next;
+        });
+      } catch (err) {
+        console.warn('Could not preload active week details for sidebar', err?.message || err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [teacher?.userId, selectedCourseId, currentWeekIndex]);
+
+  // Monthly grouping: group annualRows by month (fallback to inferred month from day dates)
   const monthlyGroups = React.useMemo(() => {
     const map = {};
     (annualRows || []).forEach((r) => {
-      const m = (r.month || 'Unspecified').toString();
+      let m = (r.month || '').toString().trim();
+      if (!m) {
+        const weekDays = normalizeWeekDaysLite(r.weekDays || r.days || []);
+        const firstWithDate = weekDays.find((d) => (d?.date || '').toString().slice(0, 10));
+        const iso = (firstWithDate?.date || '').toString().slice(0, 10);
+        if (iso) {
+          const dt = new Date(`${iso}T00:00:00`);
+          if (!Number.isNaN(dt.getTime())) m = ALL_MONTHS[dt.getMonth()];
+        }
+      }
+      if (!m) m = 'Unspecified';
       if (!map[m]) map[m] = [];
       map[m].push(r);
     });
     return map;
   }, [annualRows]);
+
+  const monthIndexFromLabel = (label) => {
+    if (!label) return null;
+    const raw = String(label).trim();
+    if (!raw) return null;
+
+    // Numeric month formats: "1", "01", "Month 1" etc.
+    const digits = raw.replace(/[^0-9]/g, '');
+    if (digits) {
+      const m = parseInt(digits, 10);
+      if (m >= 1 && m <= 12) return m - 1;
+    }
+
+    // Match known month names first
+    const idx = ALL_MONTHS.findIndex((m) => m.toLowerCase() === raw.toLowerCase());
+    if (idx !== -1) return idx;
+
+    // Try parse inputs like "January 2026" or "Jan"
+    const tryDt = new Date(`${raw} 1, 2026`);
+    if (!Number.isNaN(tryDt.getTime())) return tryDt.getMonth();
+    return null;
+  };
+
+  const currentMonthKey = React.useMemo(() => {
+    const keys = Object.keys(monthlyGroups || {});
+    if (!keys.length) return null;
+    const nowIdx = new Date().getMonth();
+    const preferred = ALL_MONTHS[nowIdx];
+    const exact = keys.find((k) => k.toLowerCase().trim() === preferred.toLowerCase());
+    if (exact) return exact;
+    const fuzzy = keys.find((k) => monthIndexFromLabel(k) === nowIdx);
+    return fuzzy || null;
+  }, [monthlyGroups]);
+
+  const currentMonthRows = React.useMemo(() => {
+    if (!currentMonthKey) return [];
+    return monthlyGroups?.[currentMonthKey] || [];
+  }, [monthlyGroups, currentMonthKey]);
 
   const getScheduledIndex = (dayName) => {
     if (!dayName) return null;
@@ -427,7 +874,7 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
   };
 
   const buildSubmissionKey = (weekVal, dayName, dayIdx) => {
-    return `${teacher?.userId || 'anon'}::${selectedCourseId || 'nocourse'}::${weekVal || currentWeekIndex || 0}::${(dayName || dayIdx)}`;
+    return `${teacherSubmissionId || 'anon'}::${selectedCourseId || 'nocourse'}::${weekVal || currentWeekIndex || 0}::${(dayName || dayIdx)}`;
   };
 
   const getDayStatus = (day, di) => {
@@ -453,15 +900,16 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
 
   const todayStats = React.useMemo(() => {
     const stats = { submitted: 0, missed: 0, pending: 0, total: 0 };
-    (dailyPlans || []).forEach((p) => {
+    const effective = (dbDailyPlans && dbDailyPlans.length) ? dbDailyPlans : dailyPlans;
+    (effective || []).forEach((p) => {
       const s = p.status || 'pending';
       stats[s] = (stats[s] || 0) + 1;
       stats.total += 1;
     });
     return stats;
-  }, [dailyPlans, submittedKeys]);
+  }, [dailyPlans, dbDailyPlans, submittedKeys]);
 
-  const monthlyCount = React.useMemo(() => Object.values(monthlyGroups || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0), [monthlyGroups]);
+  const monthlyCount = React.useMemo(() => (currentMonthRows?.length || 0), [currentMonthRows]);
 
   const monthlyStats = React.useMemo(() => {
     const map = {};
@@ -499,9 +947,9 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
             </div>
           </div>
 
-          {(dailyPlans && dailyPlans.length > 0) ? (
+          {((dbDailyPlans && dbDailyPlans.length > 0) ? dbDailyPlans : (dailyPlans && dailyPlans.length > 0)) ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {dailyPlans.map((p, idx) => {
+              {(dbDailyPlans && dbDailyPlans.length > 0 ? dbDailyPlans : dailyPlans).map((p, idx) => {
                 const status = p.status || 'pending';
                 const color = status === 'submitted' ? '#2f855a' : status === 'missed' ? '#c53030' : '#4a5568';
                 return (
@@ -569,9 +1017,11 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
     // monthly
     return (
       <div className="space-y-2">
-        <h3 className="font-semibold">Monthly</h3>
-        {Object.keys(monthlyGroups).length === 0 && <div className="text-xs text-gray-500">No monthly data.</div>}
-        {Object.entries(monthlyGroups).map(([month, rows]) => {
+        <h3 className="font-semibold">This Month</h3>
+        {!currentMonthKey && <div className="text-xs text-gray-500">No plans for this month.</div>}
+        {currentMonthKey && (() => {
+          const month = currentMonthKey;
+          const rows = currentMonthRows;
           const s = monthlyStats[month] || { total: 0, submitted: 0, missed: 0, pending: 0, topics: [] };
           const pct = s.total ? Math.round((s.submitted / s.total) * 100) : 0;
           return (
@@ -611,7 +1061,7 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
               )}
             </div>
           );
-        })}
+        })()}
       </div>
     );
   };
@@ -662,8 +1112,12 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
 
   const handleSaveAnnualPlan = async () => {
     try {
+      if (!teacherSubmissionId) {
+        alert('TeacherId not resolved yet. Please refresh and try again.');
+        return;
+      }
       const payload = {
-        teacherId: teacher.userId,
+        teacherId: teacherSubmissionId,
         courseId: selectedCourseId,
         academicYear: "2025/26",
         annualRows,
@@ -1025,6 +1479,27 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
             {(() => {
               const fieldsOrder = ['month','week','days','topic','objective','method','material','assessment'];
               return fieldsOrder.map((field) => {
+                if (field === 'month') {
+                  return (
+                    <td key={field} style={{ padding: 8 }}>
+                      <select
+                        className="input input-full"
+                        value={(row.month || '').toString()}
+                        onChange={(e) => {
+                          const updated = [...annualRows];
+                          updated[index].month = e.target.value;
+                          setAnnualRows(updated);
+                        }}
+                      >
+                        <option value="">-- Select Month --</option>
+                        {ALL_MONTHS.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </td>
+                  );
+                }
+
                 if (field === 'week') {
                   return (
                     <td key={field} style={{ padding: 8 }}>
@@ -1146,17 +1621,23 @@ const handleSaveWeekPlan = async (rowIndex = null) => {
 
                   {days.map((day, di) => (
                     <div key={di} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input
-                        placeholder="Day name (e.g. Monday or Topic Day)"
-                        value={days[di]?.dayName || ""}
-                        onChange={(e) => {
-                          const updated = [...days];
-                          updated[di] = { ...updated[di], dayName: e.target.value };
-                          setDays(updated);
-                        }}
-                        className="input"
-                        style={{ width: 140 }}
-                      />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: 170 }}>
+                        <input
+                          type="date"
+                          value={days[di]?.date || ""}
+                          onChange={(e) => {
+                            const iso = e.target.value;
+                            const updated = [...days];
+                            updated[di] = { ...updated[di], date: iso, dayName: weekdayFromISODate(iso) };
+                            setDays(updated);
+                          }}
+                          className="input"
+                          style={{ width: 170 }}
+                        />
+                        <div className="muted-italic" style={{ fontSize: 12 }}>
+                          {days[di]?.dayName || ''}
+                        </div>
+                      </div>
                       <input
                         placeholder="Topic"
                         value={days[di]?.topic || ""}
