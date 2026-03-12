@@ -41,7 +41,7 @@ def healthz():
 # ===================== HOME PAGE =====================
 @app.route('/')
 def home():
-    return render_template('student_register.html')
+    return render_template('parent_register.html')
 
 
 
